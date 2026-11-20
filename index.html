@@ -288,6 +288,16 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   @page{margin:14mm}
 }
 
+/* v4: kategori */
+.katbar{display:flex;gap:8px;overflow-x:auto;margin:0 -16px 14px;padding:2px 16px 4px;scrollbar-width:none}
+.katbar::-webkit-scrollbar{display:none}
+.katbar button{flex:none;border:1.5px solid var(--garis);background:var(--kartu);color:var(--abu);border-radius:999px;padding:8px 14px;font-weight:700;font-size:13.5px;cursor:pointer;white-space:nowrap}
+.katbar button.aktif{background:var(--biru);border-color:var(--biru);color:#fff}
+.ringkas .bln-row .nm{width:112px}
+.item.dua{flex-wrap:wrap}
+.item.dua .item-aksi{flex-basis:100%;justify-content:flex-end}
+.combo.nopre input{padding-right:12px}
+
 .nav button{font-size:11px;padding:8px 2px}
 .nav button .ic{width:21px;height:21px}
 </style>
@@ -299,8 +309,8 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   <section id="v-beranda">
     <div class="hero">
       <div class="judul">
-        <span class="bolt">⚡</span>
-        <div><h1>Catat Token PLN</h1><small id="tglHariIni">Pembelian token &amp; arsip nota</small></div>
+        <span class="bolt" id="heroIkon">⚡</span>
+        <div><h1 id="heroJudul">Catat Token PLN</h1><small id="tglHariIni">Pembelian token &amp; arsip nota</small></div>
       </div>
       <div class="total-all">
         <small id="sAllLabel">Total keseluruhan (sejak awal)</small>
@@ -308,6 +318,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
       </div>
     </div>
 
+    <div class="katbar" data-katbar></div>
     <div id="pesanBeranda" class="pesan" role="status"></div>
 
     <div class="kartu hide" id="wrapBerMeter" style="padding:10px 12px"><select id="berMeter" aria-label="Pilih meter"></select></div>
@@ -315,6 +326,12 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     <div class="stat">
       <div class="kartu"><small id="sBulan">Bulan ini</small><b id="sTotal">–</b></div>
       <div class="kartu"><small>Transaksi bulan ini</small><b id="sJumlah">–</b></div>
+    </div>
+
+    <div class="kartu ringkas hide" id="kartuRingkas">
+      <div class="kepala-kartu"><h3 id="ringkasJudul">Semua tagihan bulan ini</h3></div>
+      <div id="ringkasIsi"></div>
+      <div class="kecil" style="margin-top:8px">Ketuk satu kategori untuk membukanya.</div>
     </div>
 
     <div class="kartu hide" id="kartuAnggaran">
@@ -362,24 +379,26 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   <section id="v-transaksi" class="hide">
     <div class="subhead">
       <button type="button" class="kembali" data-go="beranda" aria-label="Kembali"><svg class="ic" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
-      <div><h2>Transaksi</h2><small>Catat pembelian token / pembayaran listrik</small></div>
+      <div><h2>Transaksi</h2><small id="transSub">Catat pembelian token / pembayaran listrik</small></div>
     </div>
+
+    <div class="katbar" data-katbar></div>
 
     <div id="pesan" class="pesan" role="status"></div>
 
     <form id="form" class="kartu" autocomplete="off" novalidate>
       <div class="f hide" id="wrapPilihMeter"><label for="pilihMeter">Meter</label><select id="pilihMeter"></select></div>
       <div class="f">
-        <label for="noPln">No. PLN (ID pelanggan / meter)</label>
+        <label for="noPln" id="noLabel">No. PLN (ID pelanggan / meter)</label>
         <input id="noPln" inputmode="numeric" maxlength="14" placeholder="mis. 14410813084">
       </div>
       <div class="f">
-        <label for="tgl">Tanggal pembelian</label>
+        <label for="tgl" id="lblTgl">Tanggal pembelian</label>
         <input id="tgl" type="date">
         <div id="infoBulan" class="hint"></div>
       </div>
       <div class="f">
-        <label for="nominal">Nominal pembelian</label>
+        <label for="nominal" id="lblNominal">Nominal pembelian</label>
         <div class="combo" id="combo">
           <input id="nominal" inputmode="numeric" placeholder="Pilih atau ketik nominal" role="combobox"
                  aria-autocomplete="none" aria-expanded="false" aria-controls="comboList">
@@ -389,17 +408,17 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
           <ul class="combo-list" id="comboList" role="listbox"></ul>
         </div>
       </div>
-      <div class="f">
+      <div class="f" id="wrapKwh">
         <label for="kwh">Jumlah kWh dari struk <span style="font-weight:400;color:var(--abu)">(opsional)</span></label>
         <input id="kwh" inputmode="decimal" placeholder="mis. 133,4">
         <div class="hint">Untuk menghitung harga per kWh, pemakaian, dan perkiraan token habis.</div>
       </div>
-      <div class="f">
+      <div class="f" id="wrapSaldo">
         <label for="saldo">Sisa saldo kWh di meteran, setelah isi ulang <span style="font-weight:400;color:var(--abu)">(opsional, disarankan)</span></label>
         <input id="saldo" inputmode="decimal" placeholder="mis. 165,8">
         <div class="hint">Angka kWh yang tampil di meteran SETELAH token dimasukkan (umumnya tekan 07 lalu Enter, atau lihat layar). Dengan ini pemakaian harian dan perkiraan token habis dihitung akurat, walau token dibeli sebelum habis.</div>
       </div>
-      <div class="f">
+      <div class="f" id="wrapNota">
         <label>Nota / bukti pembayaran</label>
         <div id="ambil">
           <div class="ambil">
@@ -422,8 +441,8 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
           <button type="button" id="hapusFile">Hapus</button>
         </div>
       </div>
-      <div class="namafile">Nama file di Drive: <b id="namaFile">…</b><br>
-        <small>Nomor otomatis melanjutkan urutan file di folder; tanggal &amp; nominal mengikuti isian di atas.</small></div>
+      <div class="namafile" id="boxNama">Nama file di Drive: <b id="namaFile">…</b><br>
+        <small id="namaKet">Nomor otomatis melanjutkan urutan file di folder; tanggal &amp; nominal mengikuti isian di atas.</small></div>
       <button class="btn" id="kirim" type="submit"><span class="spin"></span><span id="kirimTeks">Simpan transaksi</span></button>
     </form>
   </section>
@@ -435,6 +454,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
       <div><h2>Riwayat</h2><small>Lihat, ubah, hapus, dan cari transaksi</small></div>
     </div>
 
+    <div class="katbar" data-katbar></div>
     <div class="seg" id="segR">
       <button type="button" data-mode="bulan" class="aktif">Bulan</button>
       <button type="button" data-mode="tahun">Tahun</button>
@@ -479,6 +499,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
       <button type="button" class="kembali" data-go="beranda" aria-label="Kembali"><svg class="ic" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
       <div><h2>Laporan</h2><small>Siap cetak atau simpan sebagai PDF</small></div>
     </div>
+    <div class="katbar no-print" data-katbar></div>
     <div class="kartu no-print">
       <div class="row2">
         <div class="f"><label for="lpJenis">Jenis</label><select id="lpJenis"><option value="bulan">Bulanan</option><option value="tahun">Tahunan</option></select></div>
@@ -581,11 +602,11 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   <div class="kartu" role="dialog" aria-modal="true" aria-label="Ubah transaksi">
     <h3 style="font-size:17px;margin-bottom:12px">Ubah transaksi</h3>
     <div class="f hide" id="edMeterWrap"><label for="edMeter">Meter</label><select id="edMeter"></select></div>
-    <div class="f"><label for="edNoPln">No. PLN</label><input id="edNoPln" inputmode="numeric" maxlength="14"></div>
+    <div class="f"><label for="edNoPln" id="edNoLabel">No. PLN</label><input id="edNoPln" inputmode="numeric" maxlength="14"></div>
     <div class="f"><label for="edTgl">Tanggal pembelian</label><input id="edTgl" type="date"></div>
     <div class="f"><label for="edNominal">Nominal</label><input id="edNominal" inputmode="numeric"></div>
-    <div class="f"><label for="edKwh">Jumlah kWh (opsional)</label><input id="edKwh" inputmode="decimal" placeholder="mis. 133,4"></div>
-    <div class="f"><label for="edSaldo">Saldo meter setelah isi ulang, kWh (opsional)</label><input id="edSaldo" inputmode="decimal" placeholder="mis. 165,8"></div>
+    <div class="f" id="edKwhWrap"><label for="edKwh">Jumlah kWh (opsional)</label><input id="edKwh" inputmode="decimal" placeholder="mis. 133,4"></div>
+    <div class="f" id="edSaldoWrap"><label for="edSaldo">Saldo meter setelah isi ulang, kWh (opsional)</label><input id="edSaldo" inputmode="decimal" placeholder="mis. 165,8"></div>
     <div class="hint" style="margin:-6px 0 12px">Nota tidak diganti. Nama file nota di Drive ikut menyesuaikan tanggal &amp; nominal baru.</div>
     <div id="edErr" class="pesan err" style="margin-bottom:10px"></div>
     <div class="baris">
@@ -626,12 +647,21 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   // ╔══════════════════════════════════════════════════════════════╗
   // ║  TEMPEL DISINI  →  URL Web App Code.gs (berakhiran /exec)    ║
   // ╚══════════════════════════════════════════════════════════════╝
-  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbxE2DKw4OigcUmmIIIoAf33qje3RaWhEGrt3JhE4D9z-_y-9isuvqHtVzuGr0GaBn1vHQ/exec';
+  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbwHoNvH-t35X6TiKWep-xa-s4vaVc5J_6ZgADgIzwgGn4hMzY1viRwifaTxtOjlggx5_w/exec';
 
   var BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   var HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
   var PRESET = [20000, 50000, 100000, 200000, 500000];   // pilihan dropdown nominal (ubah sesuai kebutuhan)
   var VIEWS = ['beranda', 'transaksi', 'riwayat', 'laporan', 'pengaturan'];
+  // Kategori (nilai awal; pengaturan nota terbaru dari server ikut menimpa lewat getInit)
+  var KAT_DEF = [
+    { kat: 'pln', label: 'PLN', idLabel: 'No. PLN', folders: [''], perluNota: true },
+    { kat: 'pdam', label: 'PDAM', idLabel: 'No. Pelanggan', folders: [''], perluNota: true },
+    { kat: 'wifi', label: 'WiFi', idLabel: 'ID Pelanggan', folders: [''], perluNota: true },
+    { kat: 'bpjs', label: 'BPJS', idLabel: 'No. VA', folders: ['Suami', 'Istri'], perluNota: true },
+    { kat: 'kuota', label: 'Kuota HP', idLabel: 'No. HP', folders: [], perluNota: false }
+  ];
+  var IKON_KAT = { pln: '⚡', pdam: '💧', wifi: '📶', bpjs: '🏥', kuota: '📱' };
   var $ = function (id) { return document.getElementById(id); };
   var PIN = '';
   try { PIN = sessionStorage.getItem('pln_pin') || ''; } catch (e) {}
@@ -644,6 +674,13 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     cache: {}, anal: null, init: null, reg: {}, regN: 0, kunciIni: 0, tahunIni: 0, bulanIniIdx: 0,
     berMeter: '', trenN: 6, trenVals: null, modeR: 'bulan', lastR: null, cariAktif: false, judulLaporan: ''
   };
+  // Kategori aktif + cache data per kategori (S.cache selalu menunjuk ke cache kategori aktif; S.cache = {} mengosongkan semuanya)
+  S.kat = 'pln'; S.kategori = KAT_DEF.slice(); S.nomorKat = {}; S._ca = {}; S.idKat = {};
+  try { var ktSimpan = localStorage.getItem('pln_kat'); if (ktSimpan && KAT_DEF.some(function (x) { return x.kat === ktSimpan; })) S.kat = ktSimpan; } catch (e) {}
+  Object.defineProperty(S, 'cache', {
+    get: function () { return this._ca[this.kat] || (this._ca[this.kat] = {}); },
+    set: function () { this._ca = {}; }
+  });
 
   /* ---------- util ---------- */
   async function run(fn) {
@@ -718,6 +755,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
       $('nav-' + v).classList.toggle('aktif', v === nama);
     });
     window.scrollTo(0, 0);
+    if (nama === 'transaksi') terapkanKatUI();
     if (nama === 'riwayat') muatRiwayat();
     if (nama === 'laporan') muatLaporan();
     if (nama === 'beranda' && S.siap) renderBeranda();
@@ -771,15 +809,23 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
 
   /* ---------- data banyak bulan (cache di memori) ---------- */
   async function ambilData(a, b, force) {
-    var ada = {}, perlu = [], k;
+    var kat = S.kat, ca = (S._ca[kat] = S._ca[kat] || {}), ada = {}, perlu = [], k;
     S.daftar.forEach(function (x) { if (x.ada) ada[x.y * 12 + x.m - 1] = 1; });
-    for (k = a; k <= b; k++) if (ada[k] && (force || !S.cache[k])) perlu.push(k);
+    for (k = a; k <= b; k++) if (ada[k] && (force || !ca[k])) perlu.push(k);
     if (perlu.length) {
-      var r = await run('getTransaksi', PIN, perlu[0], perlu[perlu.length - 1], !!force);
-      (r.bulan || []).forEach(function (x) { S.cache[x.k] = x; });
+      var r = await run('getTransaksi', PIN, perlu[0], perlu[perlu.length - 1], !!force, kat);
+      (r.bulan || []).forEach(function (x) { ca[x.k] = x; });
     }
-    for (k = a; k <= b; k++) if (!S.cache[k]) S.cache[k] = { k: k, rows: [], total: 0, none: true };
+    for (k = a; k <= b; k++) if (!ca[k]) ca[k] = { k: k, rows: [], total: 0, none: true };
   }
+  function katInfo(k) {
+    for (var i = 0; i < S.kategori.length; i++) if (S.kategori[i].kat === k) return S.kategori[i];
+    return KAT_DEF[0];
+  }
+  // filter meter hanya berlaku untuk PLN
+  function mBer() { return S.kat === 'pln' ? S.berMeter : ''; }
+  function mRw() { return S.kat === 'pln' ? $('rwMeter').value : ''; }
+  function mLp() { return S.kat === 'pln' ? $('lpMeter').value : ''; }
   function rowsBulan(k, meter) {
     var c = S.cache[k];
     if (!c) return null;
@@ -791,27 +837,34 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   var IKON_HAPUS = '<svg class="ic" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
   function itemHtml(x, aksi) {
     var id = ++S.regN; S.reg[id] = x;
-    var info = esc(x.tgl) + ' · ' + esc(labelMeter(x.noPln)) + (x.kwh ? ' · ' + fmtKwh(x.kwh) + ' kWh' : '') + (x.saldo ? ' · saldo ' + fmtKwh(x.saldo) : '');
-    var b = '';
-    if (x.fid || x.url) b += '<button type="button" class="chip" data-act="nota" data-i="' + id + '">Nota</button>';
+    var kat = x.kat || S.kat, pln = kat === 'pln', fl = katInfo(kat).folders || [];
+    var info = esc(x.tgl) + (pln
+      ? ' · ' + esc(labelMeter(x.noPln)) + (x.kwh ? ' · ' + fmtKwh(x.kwh) + ' kWh' : '') + (x.saldo ? ' · saldo ' + fmtKwh(x.saldo) : '')
+      : (x.noPln ? ' · ' + esc(x.noPln) : ''));
+    var dua = !!(x.fid2 || x.url2), b = '';
+    if (x.fid || x.url) b += '<button type="button" class="chip" data-act="nota" data-i="' + id + '">' + (dua ? esc(fl[0] || 'Nota 1') : 'Nota') + '</button>';
+    if (dua) b += '<button type="button" class="chip" data-act="nota2" data-i="' + id + '">' + esc(fl[1] || 'Nota 2') + '</button>';
     if (aksi) {
       b += '<button type="button" class="ib" data-act="ubah" data-i="' + id + '" aria-label="Ubah transaksi">' + IKON_UBAH + '</button>' +
            '<button type="button" class="ib merah" data-act="hapus" data-i="' + id + '" aria-label="Hapus transaksi">' + IKON_HAPUS + '</button>';
     }
-    return '<div class="item"><div class="no">' + esc(x.no) + '</div><div class="isi"><b>' + esc(rp(x.nominal)) +
+    return '<div class="item' + (dua ? ' dua' : '') + '"><div class="no">' + esc(x.no) + '</div><div class="isi"><b>' + esc(rp(x.nominal)) +
       '</b><small>' + info + '</small></div><div class="item-aksi">' + b + '</div></div>';
   }
 
   function renderBeranda() {
     var d = S.init;
     if (!d) return;
-    var meter = S.berMeter, k = S.kunciIni;
+    var pln = S.kat === 'pln', KI = katInfo(S.kat), meter = mBer(), k = S.kunciIni;
     $('tglHariIni').textContent = tglPanjang(d.hariIni) || 'Pembelian token & arsip nota';
-    $('sBulan').textContent = 'Total ' + (d.bulanLabel || 'bulan ini');
+    $('sBulan').textContent = 'Total ' + (pln ? '' : KI.label + ' ') + (d.bulanLabel || 'bulan ini');
     $('terbaruJudul').textContent = 'Terbaru · ' + (d.bulanLabel || '');
+    $('heroIkon').textContent = IKON_KAT[S.kat] || '⚡';
+    $('heroJudul').textContent = pln ? 'Catat Token PLN' : 'Catat ' + KI.label;
+    $('wrapBerMeter').classList.toggle('hide', !pln || !SET.meter.length);
 
     var total = null, jumlah = null, terbaru = null, semua = null;
-    if (!meter) {
+    if (pln && !meter) {
       total = d.total || 0; jumlah = d.jumlah || 0; terbaru = d.terbaru || [];
       semua = (d.totalAll === null || d.totalAll === undefined) ? null : d.totalAll;
       $('sAllLabel').textContent = 'Total keseluruhan (sejak awal)';
@@ -821,20 +874,33 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
       var tot = 0, ada = false;
       for (var kk = k - 12; kk <= k; kk++) { if (S.cache[kk]) { ada = true; tot += jumlahRp(rowsBulan(kk, meter) || []); } }
       semua = ada ? tot : null;
-      $('sAllLabel').textContent = 'Total ' + (namaMeter(meter) || meter) + ' (13 bulan terakhir)';
+      $('sAllLabel').textContent = 'Total ' + (pln ? (namaMeter(meter) || meter) : KI.label) + ' (13 bulan terakhir)';
     }
     $('sTotal').textContent = total === null ? '…' : rp(total);
     $('sJumlah').textContent = jumlah === null ? '…' : jumlah + ' transaksi';
     $('sAll').textContent = semua === null ? '–' : rp(semua);
     $('terbaruIsi').innerHTML = terbaru === null ? '<div class="kosong">Memuat…</div>' :
       (terbaru.length ? terbaru.map(function (x) { return itemHtml(x, false); }).join('') :
-       '<div class="kosong">Belum ada transaksi di ' + esc(d.bulanLabel || 'bulan ini') + '.</div>');
-    renderAnggaran(); renderTren(); renderBanding(); renderKwh();
+       '<div class="kosong">Belum ada transaksi ' + (pln ? '' : esc(KI.label) + ' ') + 'di ' + esc(d.bulanLabel || 'bulan ini') + '.</div>');
+    renderAnggaran(); renderTren(); renderBanding(); renderKwh(); renderRingkasKat();
+  }
+
+  function renderRingkasKat() {
+    var d = S.init, box = $('kartuRingkas');
+    if (!d || !d.ringkas) { box.classList.add('hide'); return; }
+    var maks = 1, tot = 0;
+    d.ringkas.forEach(function (x) { tot += x.total; if (x.total > maks) maks = x.total; });
+    box.classList.remove('hide');
+    $('ringkasJudul').textContent = 'Semua tagihan · ' + (d.bulanLabel || 'bulan ini');
+    $('ringkasIsi').innerHTML = d.ringkas.map(function (x) {
+      return '<button type="button" class="bln-row" data-kat="' + esc(x.kat) + '"><span class="nm">' + (IKON_KAT[x.kat] || '') + ' ' + esc(x.label) + '</span>' +
+        '<span class="bar"><i style="width:' + Math.round(x.total / maks * 100) + '%"></i></span><b>' + esc(rp(x.total)) + '</b></button>';
+    }).join('') + '<div class="totalbar"><span>Total semua kategori</span><span>' + esc(rp(tot)) + '</span></div>';
   }
 
   function renderAnggaran() {
     var d = S.init, a = SET.anggaran, box = $('kartuAnggaran');
-    if (!d || !a) { box.classList.add('hide'); return; }
+    if (!d || !a || S.kat !== 'pln') { box.classList.add('hide'); return; }
     box.classList.remove('hide');
     var pakai = d.total || 0, pct = Math.round(pakai / a * 100);
     var kelas = pct >= 100 ? 'merah' : pct >= 75 ? 'kuning' : '';
@@ -852,7 +918,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     if (!S.init) return;
     if (!S.cache[k]) { box.innerHTML = '<div class="kosong">Memuat…</div>'; return; }
     var vals = [], i;
-    for (i = n - 1; i >= 0; i--) vals.push(nilaiBulan(k - i, S.berMeter));
+    for (i = n - 1; i >= 0; i--) vals.push(nilaiBulan(k - i, mBer()));
     // rata-rata: hanya bulan yang sudah selesai, dimulai dari bulan pertama yang ada transaksi
     var lalu = vals.slice(0, n - 1), mulai = -1;
     for (i = 0; i < lalu.length; i++) if (lalu[i] > 0) { mulai = i; break; }
@@ -884,7 +950,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   function renderBanding() {
     var d = S.init, k = S.kunciIni;
     if (!d || !S.cache[k] || !S.cache[k - 1]) { $('bandingNilai').textContent = '…'; $('bandingKet').textContent = ''; return; }
-    var hari = Number(d.hariIni.slice(8, 10)), meter = S.berMeter;
+    var hari = Number(d.hariIni.slice(8, 10)), meter = mBer();
     function sampai(kk) {
       return jumlahRp((rowsBulan(kk, meter) || []).filter(function (x) { return x.tglIso && Number(x.tglIso.slice(8, 10)) <= hari; }));
     }
@@ -904,7 +970,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
 
   function renderKwh() {
     var box = $('kartuKwh'), a = S.anal;
-    if (!a || !a.meter || !a.meter.length) { box.classList.add('hide'); return; }
+    if (S.kat !== 'pln' || !a || !a.meter || !a.meter.length) { box.classList.add('hide'); return; }
     var list = a.meter.filter(function (m) { return !S.berMeter || m.noPln === S.berMeter; });
     if (!list.length) { box.classList.add('hide'); return; }
     box.classList.remove('hide');
@@ -941,7 +1007,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
       await ambilData(S.kunciIni - 12, S.kunciIni);
       renderBeranda();
     } catch (e) { $('trenSvg').innerHTML = '<div class="kosong">Grafik gagal dimuat: ' + esc(e.message) + '</div>'; }
-    if (!S.anal) muatAnalisis();
+    if (S.kat === 'pln' && !S.anal) muatAnalisis();
   }
   $('berMeter').onchange = function () { S.berMeter = this.value; renderBeranda(); };
   $('segTren').addEventListener('click', function (e) {
@@ -956,7 +1022,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     var g = e.target.closest ? e.target.closest('.batang') : null;
     if (!g || !S.trenVals) return;
     var j = Number(g.getAttribute('data-j')), kk = S.kunciIni - (S.trenN - 1 - j);
-    var r = rowsBulan(kk, S.berMeter) || [];
+    var r = rowsBulan(kk, mBer()) || [];
     $('trenInfo').textContent = namaBulanK(kk) + ': ' + rp(S.trenVals[j]) + ' · ' + r.length + ' transaksi';
   });
 
@@ -982,6 +1048,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   }
   function comboBuka(v) {
     var c = $('combo');
+    if (S.kat !== 'pln') v = false;          // pilihan nominal cepat hanya untuk PLN
     if (v) { comboAktif = -1; renderCombo(); }
     c.classList.toggle('buka', !!v);
     $('nominal').setAttribute('aria-expanded', v ? 'true' : 'false');
@@ -1019,7 +1086,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
       e.preventDefault(); comboBuka(false);
     }
   });
-  $('noPln').addEventListener('input', function () { this.value = this.value.replace(/\D/g, ''); });
+  $('noPln').addEventListener('input', function () { if (S.kat === 'pln') this.value = this.value.replace(/\D/g, ''); });
 
   /* ---------- tanggal & info bulan ---------- */
   function updateInfoBulan() {
@@ -1037,14 +1104,27 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
 
   /* ---------- file nota ---------- */
   function updateNama() {
+    var KI = katInfo(S.kat), pln = S.kat === 'pln';
+    $('boxNama').classList.toggle('hide', !KI.perluNota);
+    if (!KI.perluNota) return;
     var t = $('tgl').value, n = Number(nominalRaw());
-    var ext = S.file ? S.file.ext : '.png';
-    if (!S.nomor || !/^\d{4}-\d{2}-\d{2}$/.test(t) || !n) {
-      $('namaFile').textContent = S.nomor ? (S.nomor + '. (isi tanggal & nominal dulu)') : '…';
+    var ext = S.file ? S.file.ext : (pln ? '.png' : '.pdf');
+    var okTgl = /^\d{4}-\d{2}-\d{2}$/.test(t);
+    if (pln) {
+      if (!S.nomor || !okTgl || !n) {
+        $('namaFile').textContent = S.nomor ? (S.nomor + '. (isi tanggal & nominal dulu)') : '…';
+        return;
+      }
+      $('namaFile').textContent = S.nomor + '. ' + t.slice(8, 10) + ' ' + BULAN[Number(t.slice(5, 7)) - 1] + ' ' +
+        t.slice(0, 4) + ' (' + rp(n).replace('Rp', 'Rp ') + ')' + ext;
       return;
     }
-    $('namaFile').textContent = S.nomor + '. ' + t.slice(8, 10) + ' ' + BULAN[Number(t.slice(5, 7)) - 1] + ' ' +
-      t.slice(0, 4) + ' (' + rp(n).replace('Rp', 'Rp ') + ')' + ext;
+    var nos = S.nomorKat[S.kat];
+    if (!nos || !okTgl) { $('namaFile').textContent = nos ? '(isi tanggal dulu)' : '…'; return; }
+    $('namaFile').innerHTML = nos.map(function (no, i) {
+      var lb = KI.folders[i];
+      return (lb ? esc(lb) + ': ' : '') + esc(no + '. ' + BULAN[Number(t.slice(5, 7)) - 1] + ' ' + t.slice(0, 4) + ext);
+    }).join('<br>');
   }
   function bacaBase64(blob) {
     return new Promise(function (ok, fail) {
@@ -1078,6 +1158,64 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
       img.src = url;
     });
   }
+  async function muatNomorKat(kat) {
+    try { var r = await run('getNomorKat', PIN, kat); S.nomorKat[kat] = r.nomor; } catch (e) { /* nama file tetap '…' */ }
+    if (S.kat === kat) updateNama();
+  }
+  function idIngat(kat) { try { return localStorage.getItem('pln_id_' + kat) || ''; } catch (e) { return ''; } }
+  function idSimpan(kat, v) { try { localStorage.setItem('pln_id_' + kat, v); } catch (e) {} }
+
+  /* ---------- kategori aktif ---------- */
+  function renderKatBars() {
+    var h = S.kategori.map(function (x) {
+      return '<button type="button" data-kat="' + esc(x.kat) + '" class="' + (x.kat === S.kat ? 'aktif' : '') + '">' + (IKON_KAT[x.kat] || '') + ' ' + esc(x.label) + '</button>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-katbar]'), function (el) { el.innerHTML = h; });
+  }
+  // menyesuaikan semua tampilan yang berbeda antar kategori (form, meter, nota)
+  function terapkanKatUI() {
+    var pln = S.kat === 'pln', KI = katInfo(S.kat), ada = SET.meter.length > 0;
+    renderKatBars();
+    ['wrapBerMeter', 'wrapRwMeter', 'wrapLpMeter', 'wrapPilihMeter'].forEach(function (id) { $(id).classList.toggle('hide', !pln || !ada); });
+    $('noLabel').textContent = pln ? 'No. PLN (ID pelanggan / meter)' : KI.idLabel + ' (opsional)';
+    $('noPln').maxLength = pln ? 14 : 30;
+    $('noPln').inputMode = pln ? 'numeric' : 'text';
+    $('noPln').placeholder = pln ? 'mis. 14410813084' : 'mis. nomor / ID pelanggan';
+    $('lblTgl').textContent = pln ? 'Tanggal pembelian' : 'Tanggal pembayaran';
+    $('lblNominal').textContent = pln ? 'Nominal pembelian' : 'Nominal pembayaran';
+    $('transSub').textContent = pln ? 'Catat pembelian token / pembayaran listrik' : 'Catat pembayaran ' + KI.label;
+    $('wrapKwh').classList.toggle('hide', !pln);
+    $('wrapSaldo').classList.toggle('hide', !pln);
+    $('wrapNota').classList.toggle('hide', !KI.perluNota);
+    $('comboBtn').classList.toggle('hide', !pln);
+    $('combo').classList.toggle('nopre', !pln);
+    var dua = KI.folders.length > 1;
+    $('namaKet').textContent = pln
+      ? 'Nomor otomatis melanjutkan urutan file di folder; tanggal & nominal mengikuti isian di atas.'
+      : (dua ? 'Nota yang sama dikirim ke ' + KI.folders.length + ' folder (' + KI.folders.join(' & ') + '); nomor melanjutkan urutan di tiap folder.'
+             : 'Nomor otomatis melanjutkan urutan file di folder; bulan & tahun mengikuti tanggal pembayaran.');
+    if (!pln && KI.perluNota && !S.nomorKat[S.kat] && S.siap) muatNomorKat(S.kat);
+    updateNama();
+  }
+  function ubahKat(kat) {
+    if (kat === S.kat || !KAT_DEF.some(function (x) { return x.kat === kat; })) return;
+    S.idKat[S.kat] = $('noPln').value;                 // ingat isian identitas kategori sebelumnya
+    S.kat = kat;
+    try { localStorage.setItem('pln_kat', kat); } catch (e) {}
+    var v = S.idKat[kat];
+    $('noPln').value = v !== undefined ? v : (kat === 'pln' ? (SET.noPlnBawaan || (S.init && S.init.noPlnTerakhir) || '') : idIngat(kat));
+    comboBuka(false);
+    terapkanKatUI(); syncPilihMeter();
+    if (!S.siap) return;
+    if (S.view === 'beranda') { renderBeranda(); muatDataBeranda(); window.scrollTo(0, 0); }
+    else if (S.view === 'riwayat') muatRiwayat();
+    else if (S.view === 'laporan') muatLaporan();
+  }
+  document.addEventListener('click', function (e) {
+    var el = e.target && e.target.closest ? e.target.closest('[data-kat]') : null;
+    if (el) ubahKat(el.getAttribute('data-kat'));
+  });
+
   var MAX_BYTES = 8 * 1024 * 1024;
   function kbMb(n) { return n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.round(n / 1024) + ' KB'; }
 
@@ -1258,20 +1396,24 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     $('kirimTeks').textContent = v ? 'Menyimpan…' : 'Simpan transaksi';
   }
   function validasiForm() {
+    var pln = S.kat === 'pln', KI = katInfo(S.kat);
     var no = $('noPln').value.replace(/\s/g, '');
-    if (!/^\d{6,14}$/.test(no)) return 'No. PLN harus berupa angka 6–14 digit.';
+    if (pln && !/^\d{6,14}$/.test(no)) return 'No. PLN harus berupa angka 6–14 digit.';
+    if (!pln && $('noPln').value.trim().length > 30) return KI.idLabel + ' maksimal 30 karakter.';
     var t = $('tgl').value;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return 'Tanggal pembelian belum diisi.';
-    if (S.hariIni && t > addDays(S.hariIni, 7)) return 'Tanggal pembelian tidak boleh lebih dari 7 hari ke depan.';
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return 'Tanggal belum diisi.';
+    if (S.hariIni && t > addDays(S.hariIni, 7)) return 'Tanggal tidak boleh lebih dari 7 hari ke depan.';
     var n = Number(nominalRaw());
     if (!n || n < 1) return 'Nominal belum diisi.';
     if (n > 100000000) return 'Nominal terlalu besar.';
-    var kw = parseKwh($('kwh').value);
-    if (kw !== null && isNaN(kw)) return 'Jumlah kWh harus berupa angka lebih dari 0.';
-    var sa = parseKwh($('saldo').value);
-    if (sa !== null && isNaN(sa)) return 'Saldo meter harus berupa angka lebih dari 0.';
-    if (kw !== null && sa !== null && sa + 0.5 < kw) return 'Saldo meter setelah isi ulang tidak boleh lebih kecil dari kWh yang dibeli. Isi dengan angka yang tampil di meteran SESUDAH token dimasukkan.';
-    if (!S.file) return 'Nota belum dipilih. Ambil foto atau pilih file nota.';
+    if (pln) {
+      var kw = parseKwh($('kwh').value);
+      if (kw !== null && isNaN(kw)) return 'Jumlah kWh harus berupa angka lebih dari 0.';
+      var sa = parseKwh($('saldo').value);
+      if (sa !== null && isNaN(sa)) return 'Saldo meter harus berupa angka lebih dari 0.';
+      if (kw !== null && sa !== null && sa + 0.5 < kw) return 'Saldo meter setelah isi ulang tidak boleh lebih kecil dari kWh yang dibeli. Isi dengan angka yang tampil di meteran SESUDAH token dimasukkan.';
+    }
+    if (KI.perluNota && !S.file) return 'Nota belum dipilih. Ambil foto atau pilih file nota.';
     return '';
   }
   async function kirim(force) {
@@ -1283,29 +1425,32 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     var ulang = false;
     try {
       var tglSimpan = $('tgl').value;
+      var kat = S.kat, plnK = kat === 'pln';
       var res = await run('simpanTransaksi', {
         pin: PIN,
-        noPln: $('noPln').value.replace(/\s/g, ''),
+        kat: kat,
+        noPln: plnK ? $('noPln').value.replace(/\s/g, '') : $('noPln').value.trim(),
         tanggal: tglSimpan,
         nominal: Number(nominalRaw()),
-        mime: S.file.mime,
-        base64: S.file.base64,
-        kwh: parseKwh($('kwh').value),
-        saldo: parseKwh($('saldo').value),
+        mime: S.file ? S.file.mime : '',
+        base64: S.file ? S.file.base64 : '',
+        kwh: plnK ? parseKwh($('kwh').value) : null,
+        saldo: plnK ? parseKwh($('saldo').value) : null,
         force: !!force
       });
       if (res.status === 'duplikat') {
         setLoading(false);
         ulang = await konfirmasi('Transaksi serupa ditemukan', res.pesan + ' Tetap simpan sebagai transaksi baru?', 'Tetap simpan');
       } else {
-        tampilPesan('ok', '✅ <b>Tersimpan.</b><br>Nota: <b>' + esc(res.namaFile) + '</b><br>Tab: ' + esc(res.sheet) +
+        tampilPesan('ok', '✅ <b>Tersimpan</b> (' + esc(katInfo(kat).label) + ').' + (res.namaFile ? '<br>Nota: <b>' + esc(res.namaFile) + '</b>' : '') + '<br>Tab: ' + esc(res.sheet) +
           ' · No. ' + esc(res.no) +
           (res.tabBaru ? '<br>🆕 Tab bulan baru dibuat otomatis.' : '') +
           (res.catatan ? '<br>⚠️ ' + esc(res.catatan) : '') +
-          '<br><a href="' + esc(res.viewUrl) + '" target="_blank" rel="noopener">Buka nota</a> · ' +
+          '<br>' + (res.notaLinks || []).map(function (l) { return '<a href="' + esc(l.url) + '" target="_blank" rel="noopener">Buka nota' + (l.label ? ' ' + esc(l.label) : '') + '</a>'; }).join(' · ') + ((res.notaLinks || []).length ? ' · ' : '') +
           '<a href="#riwayat" data-go="riwayat">Lihat riwayat</a>');
         hapusFile();
         $('nominal').value = ''; $('kwh').value = ''; $('saldo').value = ''; invalidasi();
+        if (!plnK) { idSimpan(kat, $('noPln').value.trim()); delete S.nomorKat[kat]; muatNomorKat(kat); }
         S.riwayatKey = Number(tglSimpan.slice(0, 4)) + '-' + Number(tglSimpan.slice(5, 7));
         try { await muatRingkas(); } catch (e2) { /* transaksi sudah tersimpan; ringkasan dimuat ulang nanti */ }
         updateNama();
@@ -1385,7 +1530,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     $('riwayatRingkas').classList.add('hide');
     box.innerHTML = '<div class="kosong">Memuat…</div>';
     try {
-      var r = await run('getRiwayat', PIN, p[0], p[1]);
+      var r = await run('getRiwayat', PIN, p[0], p[1], S.kat);
       if (token !== S.reqRiwayat) return;       // ada permintaan yang lebih baru
       S.lastR = r;
       renderBulan(r);
@@ -1395,7 +1540,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     }
   }
   function renderBulan(r) {
-    var meter = $('rwMeter').value, box = $('riwayatIsi');
+    var meter = mRw(), box = $('riwayatIsi');
     var rows = (r.rows || []).filter(function (x) { return (x.nominal || x.tgl) && cocokMeter(x, meter); });
     if (!r.ada || !rows.length) {
       $('riwayatRingkas').classList.add('hide');
@@ -1432,7 +1577,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     return out.sort(function (a, b) { return b.t - a.t; });
   }
   async function muatTahun(token) {
-    var box = $('riwayatIsi'), y = Number($('rwTahun').value), meter = $('rwMeter').value;
+    var box = $('riwayatIsi'), y = Number($('rwTahun').value), meter = mRw();
     $('riwayatRingkas').classList.add('hide');
     box.innerHTML = '<div class="kosong">Memuat ringkasan…</div>';
     try {
@@ -1456,7 +1601,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
       }).join('');
       h += '<div class="totalbar"><span>Total ' + y + ' · ' + jml + ' transaksi</span><span>' + esc(rp(tot)) + '</span></div>';
       var pm = perMeter(semua);
-      if (!meter && pm.length > 1) {
+      if (!meter && S.kat === 'pln' && pm.length > 1) {
         h += '<h4 class="sub-judul">Per meter</h4>' + pm.map(function (o) {
           return '<div class="item"><div class="isi"><b>' + esc(labelMeter(o.no)) + '</b><small>' + o.n + ' transaksi' + (o.kwh ? ' · ' + esc(fmtKwh(o.kwh)) + ' kWh' : '') +
             '</small></div><b>' + esc(rp(o.t)) + '</b></div>';
@@ -1476,7 +1621,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     if (!S.cariAktif) { box.innerHTML = '<div class="kosong">Isi filter di atas lalu tekan “Cari”.</div>'; return; }
     box.innerHTML = '<div class="kosong">Mencari…</div>';
     try {
-      var dari = $('cDari').value, sampai = $('cSampai').value, meter = $('rwMeter').value;
+      var dari = $('cDari').value, sampai = $('cSampai').value, meter = mRw();
       var kata = $('cKata').value.trim().toLowerCase();
       var mn = Number(digits($('cMin').value)) || 0, mx = Number(digits($('cMaks').value)) || 0;
       var ks = S.daftar.filter(function (x) { return x.ada; }).map(function (x) { return x.y * 12 + x.m - 1; });
@@ -1541,7 +1686,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     if (!el) return;
     var x = S.reg[el.getAttribute('data-i')], act = el.getAttribute('data-act');
     if (!x) return;
-    if (act === 'nota') bukaNota(x); else if (act === 'ubah') bukaEdit(x); else if (act === 'hapus') hapusItem(x);
+    if (act === 'nota') bukaNota(x); else if (act === 'nota2') bukaNota({ fid: x.fid2, url: x.url2, nominal: x.nominal }); else if (act === 'ubah') bukaEdit(x); else if (act === 'hapus') hapusItem(x);
   });
   function segarkanSetelahUbah() {
     invalidasi();
@@ -1551,12 +1696,12 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   }
   async function hapusItem(x) {
     var ok = await konfirmasi('Hapus transaksi ini?',
-      rp(x.nominal) + ' · ' + x.tgl + ' · ' + labelMeter(x.noPln) + '. Barisnya dihapus dari spreadsheet dan nota di Drive dibuang ke Sampah. ' +
+      rp(x.nominal) + ' · ' + x.tgl + ' · ' + (x.noPln ? labelMeter(x.noPln) : katInfo(x.kat || S.kat).label) + '. Barisnya dihapus dari spreadsheet dan nota di Drive dibuang ke Sampah. ' +
       'Tindakan ini tidak bisa dibatalkan dari aplikasi.', 'Hapus', true);
     if (!ok) return;
     toast('Menghapus…');
     try {
-      var r = await run('hapusTransaksi', { pin: PIN, asal: { y: x.y, m: x.m, row: x.row, tglIso: x.tglIso, nominal: x.nominal } });
+      var r = await run('hapusTransaksi', { pin: PIN, kat: x.kat || S.kat, asal: { kat: x.kat || S.kat, y: x.y, m: x.m, row: x.row, tglIso: x.tglIso, nominal: x.nominal } });
       toast(r.notaDibuang ? 'Transaksi dihapus, nota dibuang dari Drive.' : (r.catatan || 'Transaksi dihapus.'), r.catatan ? '' : 'ok');
       await segarkanSetelahUbah();
     } catch (e) { toast(e.message || 'Gagal menghapus.', 'err'); }
@@ -1570,10 +1715,11 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     S.bulanIni = d.tahun + '-' + d.bulan;
     S.kunciIni = d.tahun * 12 + d.bulan - 1; S.tahunIni = d.tahun; S.bulanIniIdx = d.bulan - 1;
     S.init = d;
+    if (d.kategori) S.kategori = d.kategori;
     S.muatTerakhir = Date.now();
     S.siap = true;
     if (d.pengaturan) terapkanSet(d.pengaturan);
-    renderBeranda();
+    renderBeranda(); terapkanKatUI();
     isiPilihan(); isiTahun(); isiPeriodeLaporan();
     $('tgl').max = addDays(d.hariIni, 7);
     updateNama(); updateInfoBulan();
@@ -1582,7 +1728,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   }
   async function muatAwal() {
     var d = await muatRingkas();
-    if (!$('noPln').value) $('noPln').value = SET.noPlnBawaan || d.noPlnTerakhir || '';
+    if (!$('noPln').value) $('noPln').value = S.kat === 'pln' ? (SET.noPlnBawaan || d.noPlnTerakhir || '') : idIngat(S.kat);
     syncPilihMeter();
     if (!$('tgl').value) $('tgl').value = d.hariIni;
     updateNama(); updateInfoBulan();
@@ -1667,6 +1813,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     isiMeterSelect('berMeter', 'Semua meter'); isiMeterSelect('rwMeter', 'Semua meter'); isiMeterSelect('lpMeter', 'Semua meter');
     isiMeterSelect('pilihMeter', '— pilih meter —'); isiMeterSelect('edMeter', '— pilih meter —');
     $('berMeter').value = S.berMeter;
+    terapkanKatUI();
   }
   function terapkanSet(s) {
     SET = s;
@@ -1763,26 +1910,37 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   var EDIT = null;
   function bukaEdit(x) {
     EDIT = x;
-    $('edNoPln').value = digits(x.noPln);
+    var kat = x.kat || S.kat, pln = kat === 'pln', KI = katInfo(kat);
+    EDIT.kat = kat;
+    $('edNoLabel').textContent = pln ? 'No. PLN' : KI.idLabel + ' (opsional)';
+    $('edNoPln').maxLength = pln ? 14 : 30;
+    $('edNoPln').inputMode = pln ? 'numeric' : 'text';
+    $('edNoPln').value = pln ? digits(x.noPln) : String(x.noPln || '');
     $('edTgl').value = x.tglIso || '';
     $('edNominal').value = 'Rp ' + ribuan(x.nominal);
     $('edKwh').value = x.kwh ? String(x.kwh).replace('.', ',') : '';
     $('edSaldo').value = x.saldo ? String(x.saldo).replace('.', ',') : '';
+    $('edKwhWrap').classList.toggle('hide', !pln);
+    $('edSaldoWrap').classList.toggle('hide', !pln);
+    $('edMeterWrap').classList.toggle('hide', !pln || !SET.meter.length);
     $('edErr').className = 'pesan'; $('edErr').textContent = '';
-    $('edMeter').value = SET.meter.some(function (m) { return m.no === digits(x.noPln); }) ? digits(x.noPln) : '';
+    $('edMeter').value = pln && SET.meter.some(function (m) { return m.no === digits(x.noPln); }) ? digits(x.noPln) : '';
     $('editBox').classList.add('tampil');
   }
   function tutupEdit() { $('editBox').classList.remove('tampil'); EDIT = null; }
   $('edBatal').onclick = tutupEdit;
   $('edMeter').onchange = function () { if (this.value) $('edNoPln').value = this.value; };
-  $('edNoPln').addEventListener('input', function () { this.value = digits(this.value); $('edMeter').value = SET.meter.some(function (m) { return m.no === $('edNoPln').value; }) ? $('edNoPln').value : ''; });
+  $('edNoPln').addEventListener('input', function () { if (EDIT && EDIT.kat !== 'pln') return; this.value = digits(this.value); $('edMeter').value = SET.meter.some(function (m) { return m.no === $('edNoPln').value; }) ? $('edNoPln').value : ''; });
   $('edNominal').addEventListener('input', function () { formatRupiahInput(this); });
   $('edSimpan').onclick = async function () {
     if (!EDIT) return;
     var btn = $('edSimpan');
     if (btn.disabled) return;
-    var no = digits($('edNoPln').value), t = $('edTgl').value, n = Number(digits($('edNominal').value)), kw = parseKwh($('edKwh').value), sa = parseKwh($('edSaldo').value), err = '';
-    if (!/^\d{6,14}$/.test(no)) err = 'No. PLN harus berupa angka 6–14 digit.';
+    var plnE = EDIT.kat === 'pln';
+    var no = plnE ? digits($('edNoPln').value) : $('edNoPln').value.trim(), t = $('edTgl').value, n = Number(digits($('edNominal').value)),
+        kw = plnE ? parseKwh($('edKwh').value) : null, sa = plnE ? parseKwh($('edSaldo').value) : null, err = '';
+    if (plnE && !/^\d{6,14}$/.test(no)) err = 'No. PLN harus berupa angka 6–14 digit.';
+    else if (!plnE && no.length > 30) err = 'Maksimal 30 karakter.';
     else if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) err = 'Tanggal belum diisi.';
     else if (S.hariIni && t > addDays(S.hariIni, 7)) err = 'Tanggal tidak boleh lebih dari 7 hari ke depan.';
     else if (!n || n > 100000000) err = 'Nominal tidak valid.';
@@ -1793,7 +1951,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     btn.disabled = true; btn.classList.add('load'); $('edSimpanTeks').textContent = 'Menyimpan…';
     try {
       var x = EDIT;
-      var r = await run('editTransaksi', { pin: PIN, asal: { y: x.y, m: x.m, row: x.row, tglIso: x.tglIso, nominal: x.nominal },
+      var r = await run('editTransaksi', { pin: PIN, kat: x.kat, asal: { kat: x.kat, y: x.y, m: x.m, row: x.row, tglIso: x.tglIso, nominal: x.nominal },
         noPln: no, tanggal: t, nominal: n, kwh: kw, saldo: sa });
       tutupEdit();
       toast(r.pindahBulan ? 'Tersimpan. Transaksi dipindahkan ke tab ' + r.sheet + '.' : 'Perubahan tersimpan.', r.catatan ? '' : 'ok');
@@ -1896,9 +2054,9 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   }
   function tabelTransaksi(rows, adaKwh) {
     rows = rows.slice().sort(function (a, b) { return (a.tglIso || '').localeCompare(b.tglIso || '') || a.row - b.row; });
-    var h = '<table><thead><tr><th>No</th><th>Tanggal</th><th>Meter / No. PLN</th>' + (adaKwh ? '<th class="r">kWh</th>' : '') + '<th class="r">Nominal</th></tr></thead><tbody>';
+    var h = '<table><thead><tr><th>No</th><th>Tanggal</th><th>' + (S.kat === 'pln' ? 'Meter / No. PLN' : esc(katInfo(S.kat).idLabel)) + '</th>' + (adaKwh ? '<th class="r">kWh</th>' : '') + '<th class="r">Nominal</th></tr></thead><tbody>';
     rows.forEach(function (x, i) {
-      h += '<tr><td>' + (i + 1) + '</td><td>' + esc(x.tgl) + '</td><td>' + esc(labelMeterLengkap(x.noPln)) + '</td>' +
+      h += '<tr><td>' + (i + 1) + '</td><td>' + esc(x.tgl) + '</td><td>' + esc(S.kat === 'pln' ? labelMeterLengkap(x.noPln) : (x.noPln || '–')) + '</td>' +
         (adaKwh ? '<td class="r">' + (x.kwh ? esc(fmtKwh(x.kwh)) : '–') + '</td>' : '') + '<td class="r">' + esc(rp(x.nominal)) + '</td></tr>';
     });
     h += '</tbody><tfoot><tr><td colspan="3">Total (' + rows.length + ' transaksi)</td>' + (adaKwh ? '<td class="r">' + (jumlahKwh(rows) ? esc(fmtKwh(jumlahKwh(rows))) : '–') + '</td>' : '') +
@@ -1910,8 +2068,9 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     bulanRows.forEach(function (b) { semua = semua.concat(b.rows); });
     var adaKwh = semua.some(function (x) { return x.kwh; });
     var judul = jenis === 'bulan' ? BULAN[m0] + ' ' + y : 'Tahun ' + y;
-    var h = '<h2>Laporan Pembelian Token Listrik PLN</h2><div class="doc-sub">Periode: <b>' + esc(judul) + '</b> · Meter: <b>' +
-      esc(meter ? labelMeterLengkap(meter) : 'Semua meter') + '</b></div>';
+    var plnL = S.kat === 'pln';
+    var h = '<h2>' + (plnL ? 'Laporan Pembelian Token Listrik PLN' : 'Laporan Pembayaran ' + esc(katInfo(S.kat).label)) + '</h2><div class="doc-sub">Periode: <b>' + esc(judul) + '</b>' +
+      (plnL ? ' · Meter: <b>' + esc(meter ? labelMeterLengkap(meter) : 'Semua meter') + '</b>' : '') + '</div>';
     if (!semua.length) return h + '<div class="kosong">Tidak ada transaksi pada periode ini.</div>';
     var tot = jumlahRp(semua);
     h += '<div class="ring"><span>Total: <b>' + esc(rp(tot)) + '</b></span><span>Transaksi: <b>' + semua.length + '</b></span>';
@@ -1936,7 +2095,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
       h += '</tbody><tfoot><tr><td>Total</td><td class="r">' + semua.length + '</td>' + (adaKwh ? '<td class="r">' + esc(fmtKwh(jumlahKwh(semua))) + '</td>' : '') + '<td class="r">' + esc(rp(tot)) + '</td></tr></tfoot></table>';
     }
     var pm = perMeter(semua);
-    if (!meter && pm.length > 1) {
+    if (!meter && S.kat === 'pln' && pm.length > 1) {
       h += '<h3>Ringkasan per meter</h3><table><thead><tr><th>Meter</th><th class="r">Transaksi</th><th class="r">Total</th></tr></thead><tbody>' +
         pm.map(function (o) { return '<tr><td>' + esc(labelMeterLengkap(o.no)) + '</td><td class="r">' + o.n + '</td><td class="r">' + esc(rp(o.t)) + '</td></tr>'; }).join('') + '</tbody></table>';
     }
@@ -1948,7 +2107,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   }
   async function muatLaporan() {
     if (!S.siap) return;
-    var doc = $('laporanDoc'), token = ++S.reqLap, jenis = $('lpJenis').value, v = $('lpPeriode').value, meter = $('lpMeter').value;
+    var doc = $('laporanDoc'), token = ++S.reqLap, jenis = $('lpJenis').value, v = $('lpPeriode').value, meter = mLp();
     if (!v) { doc.innerHTML = '<div class="kosong">Belum ada data untuk dilaporkan.</div>'; return; }
     doc.innerHTML = '<div class="kosong">Menyiapkan laporan…</div>';
     try {
@@ -1959,7 +2118,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
       if (token !== S.reqLap) return;
       for (k = a; k <= b; k++) bulanRows.push({ m0: k % 12, rows: rowsBulan(k, meter) || [] });
       doc.innerHTML = bangunLaporan(jenis, y, m0, bulanRows, meter);
-      S.judulLaporan = 'Laporan PLN ' + (jenis === 'bulan' ? BULAN[m0] + ' ' + y : y) + (meter ? ' - ' + (namaMeter(meter) || meter) : '');
+      S.judulLaporan = 'Laporan ' + katInfo(S.kat).label + ' ' + (jenis === 'bulan' ? BULAN[m0] + ' ' + y : y) + (meter ? ' - ' + (namaMeter(meter) || meter) : '');
     } catch (e) { if (token === S.reqLap) doc.innerHTML = '<div class="pesan err">❌ ' + esc(e.message) + '</div>'; }
   }
   $('lpJenis').onchange = function () { isiPeriodeLaporan(); muatLaporan(); };
