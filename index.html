@@ -395,6 +395,11 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
         <div class="hint">Untuk menghitung harga per kWh, pemakaian, dan perkiraan token habis.</div>
       </div>
       <div class="f">
+        <label for="saldo">Sisa saldo kWh di meteran, setelah isi ulang <span style="font-weight:400;color:var(--abu)">(opsional, disarankan)</span></label>
+        <input id="saldo" inputmode="decimal" placeholder="mis. 165,8">
+        <div class="hint">Angka kWh yang tampil di meteran SETELAH token dimasukkan (umumnya tekan 07 lalu Enter, atau lihat layar). Dengan ini pemakaian harian dan perkiraan token habis dihitung akurat, walau token dibeli sebelum habis.</div>
+      </div>
+      <div class="f">
         <label>Nota / bukti pembayaran</label>
         <div id="ambil">
           <div class="ambil">
@@ -514,7 +519,9 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
         <div class="f"><label for="setPengHari">Ingatkan … hari sebelumnya</label><input id="setPengHari" inputmode="numeric" maxlength="2" placeholder="3"></div>
         <div class="f"><label for="setPengEmail">Email penerima</label><input id="setPengEmail" type="email" placeholder="Kosong = email pemilik script"></div>
       </div>
-      <div class="hint" style="margin-top:-8px;margin-bottom:14px">Perlu catatan kWh dari minimal 2 pembelian (selisih ≥ 7 hari). Perkiraan dihitung dari pola pembelian Anda.</div>
+      <div class="hint" style="margin-top:-8px;margin-bottom:14px">Perlu catatan kWh dari minimal 2 pembelian (selisih ≥ 7 hari). Paling akurat bila setiap isi ulang Anda catat juga “sisa saldo kWh di meteran”. Email dicek otomatis tiap hari sekitar pukul 08.00 dan hanya dikirim satu kali per pembelian.</div>
+      <button type="button" class="btn sekunder" id="setEmailUji" style="margin-bottom:6px">Kirim email uji</button>
+      <div class="hint" style="margin-bottom:14px">Simpan pengaturan lebih dulu; email uji dikirim ke alamat yang tersimpan.</div>
 
       <button class="btn" id="setSimpan" type="submit"><span class="spin"></span><span id="setSimpanTeks">Simpan pengaturan</span></button>
     </form>
@@ -578,6 +585,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     <div class="f"><label for="edTgl">Tanggal pembelian</label><input id="edTgl" type="date"></div>
     <div class="f"><label for="edNominal">Nominal</label><input id="edNominal" inputmode="numeric"></div>
     <div class="f"><label for="edKwh">Jumlah kWh (opsional)</label><input id="edKwh" inputmode="decimal" placeholder="mis. 133,4"></div>
+    <div class="f"><label for="edSaldo">Saldo meter setelah isi ulang, kWh (opsional)</label><input id="edSaldo" inputmode="decimal" placeholder="mis. 165,8"></div>
     <div class="hint" style="margin:-6px 0 12px">Nota tidak diganti. Nama file nota di Drive ikut menyesuaikan tanggal &amp; nominal baru.</div>
     <div id="edErr" class="pesan err" style="margin-bottom:10px"></div>
     <div class="baris">
@@ -618,7 +626,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   // ╔══════════════════════════════════════════════════════════════╗
   // ║  TEMPEL DISINI  →  URL Web App Code.gs (berakhiran /exec)    ║
   // ╚══════════════════════════════════════════════════════════════╝
-  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbzIopHp1fSRXbqL0rT3SgiHAvFmxl60zMaQcCUGo3vk_rvRI05xWFztrHDC_xI_QSMDQw/exec';
+  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbxE2DKw4OigcUmmIIIoAf33qje3RaWhEGrt3JhE4D9z-_y-9isuvqHtVzuGr0GaBn1vHQ/exec';
 
   var BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   var HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
@@ -783,7 +791,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   var IKON_HAPUS = '<svg class="ic" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
   function itemHtml(x, aksi) {
     var id = ++S.regN; S.reg[id] = x;
-    var info = esc(x.tgl) + ' · ' + esc(labelMeter(x.noPln)) + (x.kwh ? ' · ' + fmtKwh(x.kwh) + ' kWh' : '');
+    var info = esc(x.tgl) + ' · ' + esc(labelMeter(x.noPln)) + (x.kwh ? ' · ' + fmtKwh(x.kwh) + ' kWh' : '') + (x.saldo ? ' · saldo ' + fmtKwh(x.saldo) : '');
     var b = '';
     if (x.fid || x.url) b += '<button type="button" class="chip" data-act="nota" data-i="' + id + '">Nota</button>';
     if (aksi) {
@@ -905,13 +913,17 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
       var h = '<div class="kwh-blok">';
       if (a.meter.length > 1 || m.nama) h += '<h4>' + esc(m.nama || m.noPln) + '</h4>';
       h += '<p>Harga rata-rata <b>' + rp(m.hargaRata) + '/kWh</b> <span class="kecil">(pembelian terakhir ' + rp(m.hargaTerakhir) + '/kWh)</span></p>';
-      if (m.perHari !== null) {
+      if (m.perHari != null) {
         var sisa = m.sisaHari, ket = sisa < 0 ? 'sudah lewat ' + (-sisa) + ' hari, mungkin token sudah habis atau pembelian belum dicatat'
           : sisa === 0 ? 'hari ini' : sisa + ' hari lagi';
         h += '<p>Pemakaian ± <b>' + fmtKwh(m.perHari) + ' kWh/hari</b> <span class="kecil">(≈ ' + fmtKwh(m.perBulan) + ' kWh/bulan)</span></p>' +
              '<p>Perkiraan token habis: <b class="' + (sisa <= batas ? 'warn' : '') + '">' + esc(tglPanjang(m.tokenHabis)) + '</b> <span class="kecil">(' + esc(ket) + ')</span></p>';
+        if (m.sisaKwh != null) h += '<p>Perkiraan sisa saldo meter hari ini: <b>≈ ' + fmtKwh(m.sisaKwh) + ' kWh</b></p>';
+        h += m.metode === 'saldo'
+          ? '<p class="kecil">Dihitung dari saldo meter yang Anda catat (akurat).</p>'
+          : '<p class="kecil">Perkiraan kasar. Isi “sisa saldo kWh di meteran” setiap isi ulang agar jauh lebih akurat.</p>';
       } else {
-        h += '<p class="kecil">Perkiraan token habis muncul setelah ada catatan kWh dari 2 pembelian atau lebih (selisih minimal 7 hari).</p>';
+        h += '<p class="kecil">' + esc(m.alasan || 'Perkiraan token habis muncul setelah ada catatan kWh dari 2 pembelian atau lebih (selisih minimal 7 hari).') + '</p>';
       }
       h += '<table class="mini-tb"><tr><th>Bulan</th><th>kWh dibeli</th><th>Rp/kWh</th></tr>' +
         m.bulan.slice().reverse().map(function (b) {
@@ -1256,6 +1268,9 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     if (n > 100000000) return 'Nominal terlalu besar.';
     var kw = parseKwh($('kwh').value);
     if (kw !== null && isNaN(kw)) return 'Jumlah kWh harus berupa angka lebih dari 0.';
+    var sa = parseKwh($('saldo').value);
+    if (sa !== null && isNaN(sa)) return 'Saldo meter harus berupa angka lebih dari 0.';
+    if (kw !== null && sa !== null && sa + 0.5 < kw) return 'Saldo meter setelah isi ulang tidak boleh lebih kecil dari kWh yang dibeli. Isi dengan angka yang tampil di meteran SESUDAH token dimasukkan.';
     if (!S.file) return 'Nota belum dipilih. Ambil foto atau pilih file nota.';
     return '';
   }
@@ -1276,6 +1291,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
         mime: S.file.mime,
         base64: S.file.base64,
         kwh: parseKwh($('kwh').value),
+        saldo: parseKwh($('saldo').value),
         force: !!force
       });
       if (res.status === 'duplikat') {
@@ -1289,7 +1305,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
           '<br><a href="' + esc(res.viewUrl) + '" target="_blank" rel="noopener">Buka nota</a> · ' +
           '<a href="#riwayat" data-go="riwayat">Lihat riwayat</a>');
         hapusFile();
-        $('nominal').value = ''; $('kwh').value = ''; invalidasi();
+        $('nominal').value = ''; $('kwh').value = ''; $('saldo').value = ''; invalidasi();
         S.riwayatKey = Number(tglSimpan.slice(0, 4)) + '-' + Number(tglSimpan.slice(5, 7));
         try { await muatRingkas(); } catch (e2) { /* transaksi sudah tersimpan; ringkasan dimuat ulang nanti */ }
         updateNama();
@@ -1722,6 +1738,15 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     finally { btn.disabled = false; btn.classList.remove('load'); $('setSimpanTeks').textContent = 'Simpan pengaturan'; }
   });
 
+  $('setEmailUji').onclick = async function () {
+    var b = this, t = b.textContent;
+    if (b.disabled) return;
+    b.disabled = true; b.textContent = 'Mengirim…';
+    try { var r = await run('kirimEmailUji', PIN); toast('Email uji terkirim ke ' + r.ke + '.', 'ok'); }
+    catch (e) { toast(e.message || 'Gagal mengirim email.', 'err'); }
+    finally { b.disabled = false; b.textContent = t; }
+  };
+
   /* pilih meter pada form transaksi */
   function syncPilihMeter() {
     var v = digits($('noPln').value), sel = $('pilihMeter');
@@ -1730,6 +1755,8 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   $('pilihMeter').onchange = function () { if (this.value) $('noPln').value = this.value; };
   $('noPln').addEventListener('input', syncPilihMeter);
   $('kwh').addEventListener('input', function () { this.value = this.value.replace(/[^\d.,]/g, ''); });
+  $('saldo').addEventListener('input', function () { this.value = this.value.replace(/[^\d.,]/g, ''); });
+  $('edSaldo').addEventListener('input', function () { this.value = this.value.replace(/[^\d.,]/g, ''); });
   $('edKwh').addEventListener('input', function () { this.value = this.value.replace(/[^\d.,]/g, ''); });
 
   /* ---------- ubah transaksi ---------- */
@@ -1740,6 +1767,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     $('edTgl').value = x.tglIso || '';
     $('edNominal').value = 'Rp ' + ribuan(x.nominal);
     $('edKwh').value = x.kwh ? String(x.kwh).replace('.', ',') : '';
+    $('edSaldo').value = x.saldo ? String(x.saldo).replace('.', ',') : '';
     $('edErr').className = 'pesan'; $('edErr').textContent = '';
     $('edMeter').value = SET.meter.some(function (m) { return m.no === digits(x.noPln); }) ? digits(x.noPln) : '';
     $('editBox').classList.add('tampil');
@@ -1753,18 +1781,20 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     if (!EDIT) return;
     var btn = $('edSimpan');
     if (btn.disabled) return;
-    var no = digits($('edNoPln').value), t = $('edTgl').value, n = Number(digits($('edNominal').value)), kw = parseKwh($('edKwh').value), err = '';
+    var no = digits($('edNoPln').value), t = $('edTgl').value, n = Number(digits($('edNominal').value)), kw = parseKwh($('edKwh').value), sa = parseKwh($('edSaldo').value), err = '';
     if (!/^\d{6,14}$/.test(no)) err = 'No. PLN harus berupa angka 6–14 digit.';
     else if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) err = 'Tanggal belum diisi.';
     else if (S.hariIni && t > addDays(S.hariIni, 7)) err = 'Tanggal tidak boleh lebih dari 7 hari ke depan.';
     else if (!n || n > 100000000) err = 'Nominal tidak valid.';
     else if (kw !== null && isNaN(kw)) err = 'Jumlah kWh harus berupa angka lebih dari 0.';
+    else if (sa !== null && isNaN(sa)) err = 'Saldo meter harus berupa angka lebih dari 0.';
+    else if (kw !== null && sa !== null && sa + 0.5 < kw) err = 'Saldo meter setelah isi ulang tidak boleh lebih kecil dari kWh yang dibeli.';
     if (err) { $('edErr').className = 'pesan err'; $('edErr').textContent = err; return; }
     btn.disabled = true; btn.classList.add('load'); $('edSimpanTeks').textContent = 'Menyimpan…';
     try {
       var x = EDIT;
       var r = await run('editTransaksi', { pin: PIN, asal: { y: x.y, m: x.m, row: x.row, tglIso: x.tglIso, nominal: x.nominal },
-        noPln: no, tanggal: t, nominal: n, kwh: kw });
+        noPln: no, tanggal: t, nominal: n, kwh: kw, saldo: sa });
       tutupEdit();
       toast(r.pindahBulan ? 'Tersimpan. Transaksi dipindahkan ke tab ' + r.sheet + '.' : 'Perubahan tersimpan.', r.catatan ? '' : 'ok');
       await segarkanSetelahUbah();
