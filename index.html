@@ -370,6 +370,10 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
 .login.ok .lg-panel{opacity:0;transform:translateY(14px) scale(.97);transition:opacity .5s,transform .5s}
 @media (prefers-reduced-motion:reduce){.login,.login *{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 @media print{.login{display:none!important}}
+.judul .keluar{margin-left:auto;flex:none;border:0;background:rgba(255,255,255,.16);color:#fff;width:38px;height:38px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s,transform .12s}
+.judul .keluar:hover{background:rgba(255,255,255,.26)}
+.judul .keluar:active{transform:scale(.92)}
 </style>
 </head>
 <body>
@@ -381,6 +385,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
       <div class="judul">
         <span class="bolt" id="heroIkon">⚡</span>
         <div><h1 id="heroJudul">Catat Token PLN</h1><small id="tglHariIni">Pembelian token &amp; arsip nota</small></div>
+        <button type="button" class="keluar hide" id="btnKeluar" title="Keluar" aria-label="Keluar (kunci aplikasi)"><svg class="ic" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg></button>
       </div>
       <div class="total-all">
         <small id="sAllLabel">Total keseluruhan (sejak awal)</small>
@@ -734,7 +739,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   // ╔══════════════════════════════════════════════════════════════╗
   // ║  TEMPEL DISINI  →  URL Web App Code.gs (berakhiran /exec)    ║
   // ╚══════════════════════════════════════════════════════════════╝
-  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbyzI5b-PbyDzRVGagTnQtpzNrktm4pxJ5oU816NGUhrbdKEqDTwM-3s1xYt_lcZBE0zHw/exec';
+  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbz5BjwyzkU4GXlnxdNAR3UGbGgsCKAoRkBouhnuxqHhiKWQiZDLDvxCSV6Dj3a67o6ENw/exec';
 
   var BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   var HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
@@ -1933,6 +1938,11 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     };
   })();
   function tampilPin(m) { Login.tampil(m); }
+  // Keluar: hapus PIN dari sesi lalu muat ulang, sehingga semua data di layar ikut terhapus.
+  $('btnKeluar').addEventListener('click', function () {
+    try { sessionStorage.removeItem('pln_pin'); } catch (x) {}
+    location.reload();
+  });
   // Ingat bahwa PIN dipakai, supaya layar login langsung tampil saat aplikasi dibuka (tanpa kilasan isi aplikasi).
   try { if (!PIN && localStorage.getItem('pln_perlu_pin') === '1') Login.tampil(''); } catch (x) {}
 
@@ -1953,6 +1963,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     try {
       var s = await run('statusAwal');
       try { localStorage.setItem('pln_perlu_pin', s.perluPin ? '1' : '0'); } catch (x) {}
+      $('btnKeluar').classList.toggle('hide', !s.perluPin);
       if (s.perluPin && !PIN) { tampilPin(''); return; }
       await muatAwal();
     } catch (e) {
