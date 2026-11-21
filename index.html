@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b5ea8">
 <script>(function(){try{var p=localStorage.getItem("pln_tema")||"sistem";var g=p==="gelap"||(p==="sistem"&&window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.setAttribute("data-tema",g?"gelap":"terang");}catch(e){}})();</script>
+<script>
+/* Aplikasi disembunyikan (dan scroll dikunci) sejak awal sampai status PIN dari server diketahui,
+   supaya dashboard tidak sempat berkedip sebelum halaman login. Dibuka lewat bukaApp() di script utama. */
+document.documentElement.classList.add("kunci");
+/* Pengaman: bila server tak menjawab / script gagal, dashboard tetap dibuka (kecuali layar login sedang tampil). */
+setTimeout(function(){var l=document.getElementById("login");if(!l||!l.classList.contains("tampil"))document.documentElement.classList.remove("kunci");},20000);
+</script>
 <title>Catat Token PLN</title>
 <style>
 :root{
@@ -302,6 +309,18 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
 .nav button{font-size:11px;padding:8px 2px}
 .nav button .ic{width:21px;height:21px}
 
+/* ---------- layar kunci: tahan dashboard + matikan scroll halaman selama splash / login ---------- */
+html.kunci{overflow:hidden}
+html.kunci .app,html.kunci .nav{visibility:hidden}
+.splash{position:fixed;inset:0;z-index:99;display:none;align-items:center;justify-content:center;
+  background:radial-gradient(120% 90% at 50% 0%,#0d5aa6 0%,#072b4f 48%,#04152a 100%)}
+html.kunci .splash{display:flex}
+.splash svg{width:64px;height:64px;fill:#f6c200;stroke:#f6c200;stroke-width:1.2;stroke-linejoin:round;
+  filter:drop-shadow(0 0 10px rgba(246,194,0,.6));animation:spDenyut 1.1s ease-in-out infinite alternate}
+@keyframes spDenyut{from{opacity:.4;transform:scale(.9)}to{opacity:1;transform:scale(1.06)}}
+@media (prefers-reduced-motion:reduce){.splash svg{animation:none}}
+@media print{.splash{display:none!important}}
+
 /* ---------- login PIN ---------- */
 .login{--k:clamp(40px,calc((100vh - 280px) / 6.2),76px);position:fixed;top:0;left:0;right:0;height:100vh;z-index:100;display:none;overflow:hidden;color:#fff;
   background:radial-gradient(120% 90% at 50% 0%,#0d5aa6 0%,#072b4f 48%,#04152a 100%);
@@ -309,7 +328,8 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   transition:opacity .55s ease,transform .55s cubic-bezier(.2,.7,.2,1),filter .55s}
 .login.tampil{display:block}
 @supports (height:100dvh){.login{height:100dvh;--k:clamp(40px,calc((100dvh - 280px) / 6.2),76px)}}
-.lg-scroll{position:relative;height:100%;overflow-x:hidden;overflow-y:auto;display:flex;padding:12px 20px}
+.lg-scroll{position:relative;height:100%;overflow-x:hidden;overflow-y:auto;display:flex;padding:12px 20px;scrollbar-width:none;-ms-overflow-style:none;overscroll-behavior:contain}
+.lg-scroll::-webkit-scrollbar{display:none}
 .login.selesai{opacity:0;transform:scale(1.06);filter:blur(6px);pointer-events:none}
 .lg-orb{position:absolute;border-radius:50%;filter:blur(72px);pointer-events:none;animation:lgDrift 24s ease-in-out infinite alternate}
 .lg-orb.a{width:340px;height:340px;left:-120px;top:-100px;background:#1e8bff;opacity:.45}
@@ -695,6 +715,9 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
 
 <div class="toast" id="toast" role="status"></div>
 
+<!-- SPLASH: tampil singkat saat status PIN dicek -->
+<div class="splash" id="splash" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg></div>
+
 <!-- LOGIN PIN -->
 <div class="login" id="login" role="dialog" aria-modal="true" aria-labelledby="lgJudul">
   <span class="lg-orb a"></span><span class="lg-orb b"></span>
@@ -741,7 +764,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   // ╔══════════════════════════════════════════════════════════════╗
   // ║  TEMPEL DISINI  →  URL Web App Code.gs (berakhiran /exec)    ║
   // ╚══════════════════════════════════════════════════════════════╝
-  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbyNqrLJquPXQGJjLYWY8JrCsxfTCb844loeakxgDFknECmK7k0xqNKHVMA5vX5kMVntPg/exec';
+  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbw0mV0GFqqac7ojF3CbbjPFYhUkvy1VFUE_s2SjKSHsmCpreFUSy2QYfkBm5SrQG1_6JA/exec';
 
   var BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   var HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
@@ -1846,19 +1869,21 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     muatDataBeranda();                 // grafik & analisis dimuat di latar belakang
     return d;
   }
+  function bukaApp() { document.documentElement.classList.remove('kunci'); }   // tampilkan dashboard & aktifkan scroll lagi
   async function muatAwal() {
     var d = await muatRingkas();
     if (!$('noPln').value) $('noPln').value = S.kat === 'pln' ? (SET.noPlnBawaan || d.noPlnTerakhir || '') : idIngat(S.kat);
     syncPilihMeter();
     if (!$('tgl').value) $('tgl').value = d.hariIni;
     updateNama(); updateInfoBulan();
+    bukaApp();
     Login.tutup();
     $('pesanBeranda').className = 'pesan';
     if (S.view === 'riwayat') muatRiwayat();
     if (S.view === 'laporan') muatLaporan();
   }
 
-  /* ---------- login PIN (4–12 angka; PIN diatur di tab "PIN" Spreadsheet) ---------- */
+  /* ---------- login PIN (4–12 angka; PIN diatur lewat menu Spreadsheet: Catat Token › Atur PIN) ---------- */
   var Login = (function () {
     var MIN = 4, MAX = 12, HINT = MIN + '–' + MAX + ' angka';
     var el = $('login'), isi = $('lgIn'), dots = $('lgDots'), msg = $('lgMsg'), go = $('lgGo'), pg = $('lgPg'), lihat = $('lgLihat'), del = $('lgHapus');
@@ -1934,6 +1959,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
       tutup: tutup,
       tampil: function (m) {
         if (m) { PIN = ''; try { sessionStorage.removeItem('pln_pin'); } catch (x) {} }
+        document.documentElement.classList.add('kunci');   // dashboard di belakang disembunyikan & scroll halaman dikunci
         if (!el.classList.contains('tampil')) { buf = ''; sibuk = false; tahan = false; el.className = 'login tampil'; gambar(); }
         pesan(m);
       }
@@ -1971,6 +1997,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     } catch (e) {
       if (/PIN/.test(e.message)) tampilPin(e.message);
       else {
+        bukaApp();                         // kegagalan non-PIN (mis. koneksi): tampilkan dashboard agar pesan & tombol "Coba lagi" terlihat
         tampilPesanBeranda('❌ ' + esc(e.message) + '<br><button type="button" class="link" id="coba">Coba lagi</button>');
         $('terbaruIsi').innerHTML = '<div class="kosong">–</div>';
         var b = $('coba'); if (b) b.onclick = function () { $('pesanBeranda').className = 'pesan'; boot(); };
