@@ -301,6 +301,75 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
 
 .nav button{font-size:11px;padding:8px 2px}
 .nav button .ic{width:21px;height:21px}
+
+/* ---------- login PIN ---------- */
+.login{position:fixed;inset:0;z-index:100;display:none;overflow:auto;padding:20px;color:#fff;
+  background:radial-gradient(120% 90% at 50% 0%,#0d5aa6 0%,#072b4f 48%,#04152a 100%);
+  font-family:ui-rounded,"SF Pro Rounded","Segoe UI Variable Display",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  transition:opacity .55s ease,transform .55s cubic-bezier(.2,.7,.2,1),filter .55s}
+.login.tampil{display:flex}
+.login.selesai{opacity:0;transform:scale(1.06);filter:blur(6px);pointer-events:none}
+.lg-orb{position:absolute;border-radius:50%;filter:blur(72px);pointer-events:none;animation:lgDrift 24s ease-in-out infinite alternate}
+.lg-orb.a{width:340px;height:340px;left:-120px;top:-100px;background:#1e8bff;opacity:.45}
+.lg-orb.b{width:280px;height:280px;right:-100px;bottom:-100px;background:#f6c200;opacity:.16;animation-duration:30s}
+@keyframes lgDrift{to{transform:translate(80px,50px) scale(1.18)}}
+.lg-wrap{position:relative;margin:auto;width:100%;max-width:340px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.lg-ring{width:clamp(96px,17vh,132px);height:auto;margin-bottom:6px;overflow:visible}
+.lg-ring circle{fill:none;stroke-width:5;stroke-linecap:round}
+.lg-ring .tr{stroke:rgba(255,255,255,.15);stroke-dasharray:100;animation:lgDraw 1.1s .1s backwards cubic-bezier(.5,0,.2,1)}
+.lg-ring .pg{stroke:#f6c200;stroke-dasharray:100;stroke-dashoffset:100;transform:rotate(-90deg);transform-box:fill-box;transform-origin:center;
+  filter:drop-shadow(0 0 6px rgba(246,194,0,.7));transition:stroke-dashoffset .45s cubic-bezier(.2,.9,.2,1),stroke .3s}
+.lg-ring .bolt{fill:#f6c200;stroke:#f6c200;stroke-width:1.2;stroke-linejoin:round;transform-box:fill-box;transform-origin:center;
+  filter:drop-shadow(0 0 8px rgba(246,194,0,.6));filter:drop-shadow(0 0 calc(4px + var(--c,0) * 18px) rgba(246,194,0,.9));
+  animation:lgStrike .85s .5s backwards cubic-bezier(.2,1.5,.4,1);transition:fill .3s,stroke .3s}
+@keyframes lgDraw{from{stroke-dashoffset:100}}
+@keyframes lgStrike{0%{opacity:0;transform:scale(.2) rotate(-18deg)}60%{opacity:1;transform:scale(1.22) rotate(4deg)}}
+@keyframes lgUp{from{opacity:0;transform:translateY(18px)}}
+.lg-wrap h1{margin:8px 0 2px;font-size:24px;letter-spacing:-.3px;animation:lgUp .7s .85s backwards}
+.lg-wrap .sub{margin:0 0 16px;color:rgba(255,255,255,.72);font-size:14.5px;animation:lgUp .7s .95s backwards}
+.lg-panel{width:100%;padding:18px 18px 16px;border-radius:28px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 24px 70px rgba(0,10,30,.45),inset 0 1px 0 rgba(255,255,255,.1);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+  animation:lgUp .8s 1.05s backwards cubic-bezier(.2,.8,.2,1)}
+.lg-in.geter{animation:lgShake .5s cubic-bezier(.36,.07,.19,.97)}
+@keyframes lgShake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(5px)}30%,50%,70%{transform:translateX(-9px)}40%,60%{transform:translateX(9px)}}
+.lg-dots{display:flex;justify-content:center;align-items:center;gap:9px;min-height:26px;margin:2px 0 6px}
+.lg-dots.penuh{animation:lgBump .3s}
+@keyframes lgBump{40%{transform:scale(1.08)}}
+.lg-dots i{width:15px;height:15px;display:grid;place-items:center;font-style:normal;font-weight:700;font-size:19px;line-height:1;font-variant-numeric:tabular-nums}
+.lg-dots i::before{content:"";width:12px;height:12px;box-sizing:border-box;border-radius:50%;border:2px solid rgba(255,255,255,.3);transition:background .2s,border-color .2s}
+.lg-dots i.on::before{background:#f6c200;border-color:#f6c200;box-shadow:0 0 12px rgba(246,194,0,.65)}
+.lg-dots i.baru::before{animation:lgPop .32s cubic-bezier(.2,1.6,.4,1)}
+@keyframes lgPop{from{transform:scale(.2)}60%{transform:scale(1.5)}}
+.lg-dots.lihat i.on::before{content:attr(data-d);width:auto;height:auto;border:0;background:none;box-shadow:none;color:#f6c200;font-size:20px}
+.lg-msg{min-height:20px;margin:0 0 10px;font-size:13.5px;color:rgba(255,255,255,.62)}
+.lg-msg.err{color:#ff9d9d}
+.lg-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(8px,1.6vh,12px);justify-items:center;margin-bottom:clamp(10px,2vh,16px)}
+.lg-key{width:clamp(56px,9.4vh,68px);aspect-ratio:1;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#fff;
+  font:600 clamp(22px,3.6vh,27px)/1 inherit;font-family:inherit;font-variant-numeric:tabular-nums;cursor:pointer;display:grid;place-items:center;
+  touch-action:manipulation;transition:transform .12s,background .2s,box-shadow .2s,color .2s}
+.lg-key:hover{background:rgba(255,255,255,.15)}
+.lg-key:active,.lg-key.tekan{transform:scale(.9);background:#f6c200;color:#1b2733;box-shadow:0 0 24px rgba(246,194,0,.5)}
+.lg-key.aksi{background:transparent;border-color:transparent;color:rgba(255,255,255,.75)}
+.lg-key.aksi.on{color:#f6c200}
+.lg-key:disabled{opacity:.3;pointer-events:none}
+.lg-key svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.lg-go{width:100%;border:0;border-radius:16px;padding:15px;font:800 16px/1 inherit;font-family:inherit;color:#1b2733;background:#f6c200;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:10px;transition:opacity .25s,transform .15s,box-shadow .3s}
+.lg-go:not(:disabled){box-shadow:0 8px 28px rgba(246,194,0,.35)}
+.lg-go:not(:disabled):active{transform:scale(.97)}
+.lg-go:disabled{opacity:.3;cursor:not-allowed}
+.lg-go .spin{border-color:rgba(27,39,51,.25);border-top-color:#1b2733}
+.login.cek .lg-go .spin{display:inline-block}
+.lg-key:focus-visible,.lg-go:focus-visible{outline:3px solid #8fd0ff;outline-offset:3px}
+.login.salah .pg{stroke:#ff5d5d;filter:drop-shadow(0 0 8px rgba(255,93,93,.8))}
+.login.salah .bolt{fill:#ff8a8a;stroke:#ff8a8a}
+.login.salah .lg-dots i.on::before{background:#ff5d5d;border-color:#ff5d5d;box-shadow:0 0 12px rgba(255,93,93,.7)}
+.login.ok .pg{stroke:#3cf0a0;stroke-dashoffset:0!important;filter:drop-shadow(0 0 10px rgba(60,240,160,.8))}
+.login.ok .bolt{fill:#fff;stroke:#fff;animation:lgSurge .7s}
+@keyframes lgSurge{40%{transform:scale(1.35)}}
+.login.ok .lg-panel{opacity:0;transform:translateY(14px) scale(.97);transition:opacity .5s,transform .5s}
+@media (prefers-reduced-motion:reduce){.login,.login *{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+@media print{.login{display:none!important}}
 </style>
 </head>
 <body>
@@ -619,14 +688,31 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
 
 <div class="toast" id="toast" role="status"></div>
 
-<!-- PIN -->
-<div class="overlay" id="pinBox">
-  <form class="kartu" id="pinForm">
-    <h3 style="margin:0 0 10px;font-size:17px">Masukkan PIN</h3>
-    <div class="f"><input id="pinInput" type="password" inputmode="numeric" placeholder="PIN"></div>
-    <div id="pinErr" class="pesan" style="margin-bottom:10px"></div>
-    <button class="btn" type="submit">Masuk</button>
-  </form>
+<!-- LOGIN PIN -->
+<div class="login" id="login" role="dialog" aria-modal="true" aria-labelledby="lgJudul">
+  <span class="lg-orb a"></span><span class="lg-orb b"></span>
+  <div class="lg-wrap">
+    <svg class="lg-ring" viewBox="0 0 160 160" aria-hidden="true">
+      <circle class="tr" cx="80" cy="80" r="70" pathLength="100"/>
+      <circle class="pg" id="lgPg" cx="80" cy="80" r="70" pathLength="100"/>
+      <g transform="translate(52.4 52.4) scale(2.3)"><path class="bolt" d="M13 2 3 14h9l-1 8 10-12h-9z"/></g>
+    </svg>
+    <h1 id="lgJudul">Catat Token PLN</h1>
+    <p class="sub">Masukkan PIN untuk membuka</p>
+    <div class="lg-panel"><div class="lg-in" id="lgIn">
+      <div class="lg-dots" id="lgDots" role="img" aria-label="Belum ada angka"></div>
+      <p class="lg-msg" id="lgMsg" role="status" aria-live="polite"></p>
+      <div class="lg-pad" id="lgPad" role="group" aria-label="Papan angka PIN">
+        <button type="button" class="lg-key" data-k="1">1</button><button type="button" class="lg-key" data-k="2">2</button><button type="button" class="lg-key" data-k="3">3</button>
+        <button type="button" class="lg-key" data-k="4">4</button><button type="button" class="lg-key" data-k="5">5</button><button type="button" class="lg-key" data-k="6">6</button>
+        <button type="button" class="lg-key" data-k="7">7</button><button type="button" class="lg-key" data-k="8">8</button><button type="button" class="lg-key" data-k="9">9</button>
+        <button type="button" class="lg-key aksi" id="lgLihat" aria-label="Tampilkan PIN"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        <button type="button" class="lg-key" data-k="0">0</button>
+        <button type="button" class="lg-key aksi" id="lgHapus" aria-label="Hapus satu angka"><svg viewBox="0 0 24 24"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><path d="m18 9-6 6M12 9l6 6"/></svg></button>
+      </div>
+      <button type="button" class="lg-go" id="lgGo" disabled><span class="spin"></span><span id="lgGoTeks">Masuk</span></button>
+    </div></div>
+  </div>
 </div>
 
 <!-- Dialog konfirmasi -->
@@ -648,7 +734,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   // ╔══════════════════════════════════════════════════════════════╗
   // ║  TEMPEL DISINI  →  URL Web App Code.gs (berakhiran /exec)    ║
   // ╚══════════════════════════════════════════════════════════════╝
-  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbx0GdZlDw4g7ICVg5PtiUbB4IZWekPCcTqHBEwIqidxQ-UBbisIT_MD5I8DIivJFbMdig/exec';
+  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbyzI5b-PbyDzRVGagTnQtpzNrktm4pxJ5oU816NGUhrbdKEqDTwM-3s1xYt_lcZBE0zHw/exec';
 
   var BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   var HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
@@ -1759,24 +1845,96 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     syncPilihMeter();
     if (!$('tgl').value) $('tgl').value = d.hariIni;
     updateNama(); updateInfoBulan();
-    $('pinBox').classList.remove('tampil');
+    Login.tutup();
     $('pesanBeranda').className = 'pesan';
     if (S.view === 'riwayat') muatRiwayat();
     if (S.view === 'laporan') muatLaporan();
   }
 
-  function tampilPin(msg) {
-    $('pinErr').className = msg ? 'pesan err' : 'pesan';
-    $('pinErr').textContent = msg || '';
-    $('pinBox').classList.add('tampil');
-  }
-  $('pinForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    PIN = $('pinInput').value;
-    muatAwal().then(function () {
-      try { sessionStorage.setItem('pln_pin', PIN); } catch (x) {}
-    }).catch(function (er) { tampilPin(er.message); });
-  });
+  /* ---------- login PIN (4–12 angka; PIN diatur di tab "PIN" Spreadsheet) ---------- */
+  var Login = (function () {
+    var MIN = 4, MAX = 12, HINT = MIN + '–' + MAX + ' angka';
+    var el = $('login'), isi = $('lgIn'), dots = $('lgDots'), msg = $('lgMsg'), go = $('lgGo'), pg = $('lgPg'), lihat = $('lgLihat'), del = $('lgHapus');
+    var buf = '', sibuk = false, tahan = false;
+
+    function ketuk(n, k, ms) { n.classList.remove(k); void n.offsetWidth; n.classList.add(k); setTimeout(function () { n.classList.remove(k); }, ms || 600); }
+    function pesan(t) { msg.textContent = t || HINT; msg.className = 'lg-msg' + (t ? ' err' : ''); }
+    function gambar(baru) {
+      var n = buf.length, tot = Math.max(MIN, n), h = '';
+      for (var k = 0; k < tot; k++) h += k < n ? '<i class="on' + (baru && k === n - 1 ? ' baru' : '') + '" data-d="' + buf.charAt(k) + '"></i>' : '<i></i>';
+      dots.innerHTML = h;
+      dots.setAttribute('aria-label', n ? n + ' angka dimasukkan' : 'Belum ada angka');
+      pg.style.strokeDashoffset = 100 - n / MAX * 100;
+      el.style.setProperty('--c', n / MAX);
+      go.disabled = sibuk || n < MIN; del.disabled = sibuk || !n;
+    }
+    function tambah(d) {
+      if (sibuk) return;
+      if (buf.length >= MAX) { ketuk(dots, 'penuh', 300); return; }
+      buf += d; pesan(''); gambar(true);
+    }
+    function hapus() { if (sibuk || !buf) return; buf = buf.slice(0, -1); pesan(''); gambar(); }
+    function gagal(m) {
+      tahan = false; sibuk = true;
+      el.classList.remove('cek', 'ok'); el.classList.add('salah');
+      $('lgGoTeks').textContent = 'Masuk'; ketuk(isi, 'geter'); pesan(m || 'PIN salah.');
+      if (navigator.vibrate) { try { navigator.vibrate([70, 40, 70]); } catch (x) {} }
+      gambar();
+      setTimeout(function () { buf = ''; sibuk = false; el.classList.remove('salah'); gambar(); }, 700);
+    }
+    function tutup() {
+      if (tahan || !el.classList.contains('tampil')) return;
+      el.classList.add('selesai');
+      setTimeout(function () {
+        el.classList.remove('tampil', 'selesai', 'ok', 'cek', 'salah');
+        buf = ''; sibuk = false; $('lgGoTeks').textContent = 'Masuk'; gambar();
+      }, 600);
+    }
+    async function kirim() {
+      if (sibuk || buf.length < MIN) return;
+      sibuk = true; go.disabled = true; el.classList.add('cek'); $('lgGoTeks').textContent = 'Memeriksa…';
+      try {
+        await run('cekPin', buf);
+        PIN = buf; tahan = true; el.classList.remove('cek'); el.classList.add('ok');
+        await Promise.all([muatAwal(), new Promise(function (r) { setTimeout(r, 950); })]);
+        try { sessionStorage.setItem('pln_pin', PIN); } catch (x) {}
+        tahan = false; tutup();
+      } catch (er) { gagal(er.message); }
+    }
+
+    $('lgPad').addEventListener('click', function (e) {
+      var b = e.target.closest('button');
+      if (b && b.getAttribute('data-k') !== null) tambah(b.getAttribute('data-k'));
+    });
+    del.addEventListener('click', hapus);
+    go.addEventListener('click', kirim);
+    lihat.addEventListener('click', function () {
+      var on = dots.classList.toggle('lihat');
+      lihat.classList.toggle('on', on);
+      lihat.setAttribute('aria-label', on ? 'Sembunyikan PIN' : 'Tampilkan PIN');
+    });
+    document.addEventListener('keydown', function (e) {
+      if (!el.classList.contains('tampil') || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (/^\d$/.test(e.key)) {
+        e.preventDefault(); tambah(e.key);
+        var b = el.querySelector('[data-k="' + e.key + '"]'); if (b) ketuk(b, 'tekan', 140);
+      } else if (e.key === 'Backspace') { e.preventDefault(); hapus(); }
+      else if (e.key === 'Escape') { if (!sibuk) { buf = ''; pesan(''); gambar(); } }
+      else if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') { e.preventDefault(); kirim(); }
+    });
+
+    return {
+      tutup: tutup,
+      tampil: function (m) {
+        if (m) { PIN = ''; try { sessionStorage.removeItem('pln_pin'); } catch (x) {} }
+        if (!el.classList.contains('tampil')) { buf = ''; sibuk = false; tahan = false; el.className = 'login tampil'; gambar(); }
+        pesan(m);
+      }
+    };
+  })();
+  function tampilPin(m) { Login.tampil(m); }
+  // Ingat bahwa PIN dipakai, supaya layar login langsung tampil saat aplikasi dibuka (tanpa kilasan isi aplikasi).
+  try { if (!PIN && localStorage.getItem('pln_perlu_pin') === '1') Login.tampil(''); } catch (x) {}
 
   // Aplikasi dibuka lama (mis. melewati pergantian hari/bulan): segarkan saat kembali ke layar.
   document.addEventListener('visibilitychange', function () {
@@ -1794,6 +1952,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   async function boot() {
     try {
       var s = await run('statusAwal');
+      try { localStorage.setItem('pln_perlu_pin', s.perluPin ? '1' : '0'); } catch (x) {}
       if (s.perluPin && !PIN) { tampilPin(''); return; }
       await muatAwal();
     } catch (e) {
