@@ -454,6 +454,47 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
   .app,.app>section,.nav,.toast,.overlay,.overlay .kartu,.combo-list,.bg-app .lg-orb{animation:none!important}
   :where(button,.btn,a.chip,.item a,.opsi),.aksi button,.aksi .ikon,.nav button .ic{transition:none!important}
 }
+
+/* ================= v6: kartu ringkasan bisa diketuk (rincian) + menu kategori rata ================= */
+.stat .kartu.klik{appearance:none;-webkit-appearance:none;border:0;font:inherit;color:inherit;text-align:left;width:100%;cursor:pointer;position:relative;padding-right:34px;transition:transform .16s cubic-bezier(.2,.8,.2,1),box-shadow .25s}
+.stat .kartu.klik::after{content:"";position:absolute;right:14px;top:50%;width:8px;height:8px;margin-top:-5px;border-right:2px solid var(--abu);border-top:2px solid var(--abu);transform:rotate(45deg);opacity:.75}
+.stat .kartu.klik:focus-visible{outline:3px solid var(--biru);outline-offset:2px}
+@media (hover:hover){.stat .kartu.klik:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(0,10,30,.32)}}
+.stat .kartu.klik:active{transform:scale(.97)}
+
+/* menu kategori: tombol berbagi lebar baris secara rata (tidak ada ruang kosong di kanan); bila layar terlalu sempit tetap bisa digeser */
+.katbar{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(max-content,1fr)}
+.katbar button{padding:9px 12px;text-align:center}
+@media (max-width:420px){.katbar{gap:6px}.katbar button{padding:9px;font-size:13px}}
+
+/* lembar rincian */
+#detBox{align-items:flex-end;padding:0}
+#detBox .kartu{max-width:520px;max-height:88vh;max-height:88dvh;padding:0;display:flex;flex-direction:column;overflow:hidden;border-radius:22px 22px 0 0}
+@media (min-width:700px){#detBox{align-items:center;padding:20px}#detBox .kartu{border-radius:22px}}
+.det-kop{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:16px 16px 12px 18px;border-bottom:1px solid var(--garis);flex:none}
+.det-kop h3{margin:0;font-size:17px}
+.det-kop small{display:block;margin-top:2px}
+.det-isi{overflow:auto;padding:14px 18px calc(20px + env(safe-area-inset-bottom));overscroll-behavior:contain}
+.det-besar{font-size:28px;font-weight:800;letter-spacing:-.4px;line-height:1.15;overflow-wrap:anywhere}
+.det-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 4px}
+.det-grid>div{background:var(--chip);border-radius:12px;padding:10px 12px;min-width:0}
+.det-grid small{display:block;color:var(--abu);font-size:12px}
+.det-grid b{display:block;font-size:15px;margin-top:2px;overflow-wrap:anywhere}
+.det-grid em{display:block;font-style:normal;font-size:11.5px;color:var(--abu)}
+.det-h{margin:18px 0 4px;font-size:13px;color:var(--abu)}
+.det-tx{display:flex;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--garis)}
+.det-list .det-tx:last-child{border-bottom:0}
+.det-tx .tg{width:40px;flex:none;text-align:center;line-height:1.15}
+.det-tx .tg b{display:block;font-size:18px}
+.det-tx .tg small{color:var(--abu);font-size:11px}
+.det-tx .isi{flex:1;min-width:0}
+.det-tx .kn{text-align:right;flex:none}
+.det-tx .isi b,.det-tx .kn b{display:block}
+.det-tx .isi small,.det-tx .kn small{display:block;color:var(--abu);font-size:12px}
+.det-isi .bln-row{cursor:default}
+.det-isi .bln-row .nm{width:112px}
+.det-isi .bln-row b{min-width:44px}
+@media (prefers-reduced-motion:reduce){.stat .kartu.klik{transition:none!important}}
 </style>
 </head>
 <body>
@@ -480,8 +521,8 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     <div class="kartu hide" id="wrapBerMeter" style="padding:10px 12px"><select id="berMeter" aria-label="Pilih meter"></select></div>
 
     <div class="stat">
-      <div class="kartu"><small id="sBulan">Bulan ini</small><b id="sTotal">–</b></div>
-      <div class="kartu"><small>Transaksi bulan ini</small><b id="sJumlah">–</b></div>
+      <button type="button" class="kartu klik" data-detail="total" aria-haspopup="dialog"><small id="sBulan">Bulan ini</small><b id="sTotal">–</b></button>
+      <button type="button" class="kartu klik" data-detail="transaksi" aria-haspopup="dialog"><small>Transaksi bulan ini</small><b id="sJumlah">–</b></button>
     </div>
 
     <div class="kartu ringkas hide" id="kartuRingkas">
@@ -750,6 +791,17 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
       <button type="button" id="vwReset">Pas layar</button>
       <button type="button" id="vwPlus" aria-label="Perbesar">+</button>
     </div>
+  </div>
+</div>
+
+<!-- Rincian kartu ringkasan -->
+<div class="overlay dlg" id="detBox">
+  <div class="kartu" role="dialog" aria-modal="true" aria-labelledby="detJudul">
+    <div class="det-kop">
+      <div><h3 id="detJudul">Rincian</h3><small class="kecil" id="detSub"></small></div>
+      <button type="button" class="ib" id="detTutup" aria-label="Tutup rincian"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <div class="det-isi" id="detIsi"></div>
   </div>
 </div>
 
@@ -1217,6 +1269,141 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
   function tampilPesanBeranda(html) {
     var p = $('pesanBeranda'); p.className = 'pesan err'; p.innerHTML = html;
   }
+
+  /* ---------- rincian kartu ringkasan Beranda (ketuk "Total bulan" / "Transaksi bulan ini") ---------- */
+  var DET = { jenis: '', req: 0, pemicu: null };
+  function tglKotak(x) {
+    return x.tglIso ? '<b>' + Number(x.tglIso.slice(8, 10)) + '</b><small>' + BULAN[Number(x.tglIso.slice(5, 7)) - 1].slice(0, 3) + '</small>' : '<b>–</b>';
+  }
+  function tglSingkat(x) { return x && x.tglIso ? Number(x.tglIso.slice(8, 10)) + ' ' + BULAN[Number(x.tglIso.slice(5, 7)) - 1] : '–'; }
+  function bukaDetail(jenis) {
+    if (!S.siap || !S.init) return;
+    var d = S.init, kat = S.kat, KI = katInfo(kat), pln = kat === 'pln', meter = mBer(), tk = ++DET.req;
+    DET.jenis = jenis; DET.pemicu = document.activeElement;
+    $('detJudul').textContent = (jenis === 'total' ? 'Total ' : 'Transaksi ') + (pln ? '' : KI.label + ' ') + d.bulanLabel;
+    $('detSub').textContent = (meter ? labelMeterLengkap(meter) + ' · ' : '') + 'Dibaca langsung dari spreadsheet';
+    $('detIsi').innerHTML = '<div class="kosong">Memuat data terbaru…</div>';
+    $('detBox').classList.add('tampil');
+    $('detTutup').focus();
+    var pm = d.bulan === 1 ? 12 : d.bulan - 1, py = d.bulan === 1 ? d.tahun - 1 : d.tahun;
+    Promise.all([
+      run('getRiwayat', PIN, d.tahun, d.bulan, kat),
+      run('getRiwayat', PIN, py, pm, kat).catch(function () { return null; })   // bulan lalu hanya untuk perbandingan
+    ]).then(function (h) {
+      if (tk === DET.req) renderDetail(h[0], h[1], kat);
+    }).catch(function (e) {
+      if (tk === DET.req) $('detIsi').innerHTML = '<div class="pesan err">❌ ' + esc(e.message) + '</div>';
+    });
+  }
+  function renderDetail(r, pr, kat) {
+    var KI = katInfo(kat), pln = kat === 'pln', meter = mBer(), d = S.init, box = $('detIsi');
+    var ambil = function (q) { return ((q && q.rows) || []).filter(function (x) { return (x.nominal || x.tgl) && cocokMeter(x, meter); }); };
+    var rows = ambil(r), prow = ambil(pr), n = rows.length, total = jumlahRp(rows), h = '';
+    if (!n) {
+      box.innerHTML = '<div class="kosong">Belum ada transaksi ' + (pln ? '' : esc(KI.label) + ' ') + (meter ? 'untuk meter ini ' : '') + 'di ' + esc(r.label) + '.</div>' +
+        '<button type="button" class="btn" data-go="transaksi">Catat transaksi</button>';
+      return;
+    }
+    var urut = rows.slice().sort(function (a, b) {
+      var ta = a.tglIso || '', tb = b.tglIso || '';
+      return ta < tb ? -1 : ta > tb ? 1 : a.row - b.row;
+    });
+    var maks = urut[0], min = urut[0];
+    urut.forEach(function (x) { if (x.nominal > maks.nominal) maks = x; if (x.nominal < min.nominal) min = x; });
+    function tile(l, v, e) { return '<div><small>' + l + '</small><b>' + v + '</b>' + (e ? '<em>' + e + '</em>' : '') + '</div>'; }
+
+    // pengelompokan per meter (PLN) / per ID pelanggan (kategori lain), hanya bila ada lebih dari satu
+    var g = Object.create(null), gk = [];
+    rows.forEach(function (x) {
+      var key = pln ? digits(x.noPln) : String(x.noPln || '');
+      if (!g[key]) { g[key] = { lab: pln ? labelMeter(x.noPln) : (x.noPln || '–'), n: 0, t: 0 }; gk.push(key); }
+      g[key].n++; g[key].t += x.nominal || 0;
+    });
+    var grup = gk.length < 2 ? '' : '<h4 class="det-h">' + (pln ? 'Per meter' : 'Per ' + esc(KI.idLabel)) + '</h4><div class="det-list">' +
+      gk.map(function (key) {
+        var o = g[key];
+        return '<div class="det-tx"><div class="isi"><b>' + esc(o.lab) + '</b><small>' + o.n + ' transaksi</small></div>' +
+          '<div class="kn"><b>' + esc(rp(o.t)) + '</b><small>' + Math.round(o.t / total * 100) + '%</small></div></div>';
+      }).join('') + '</div>';
+
+    // semua kategori bulan ini (kategori aktif memakai angka terbaru dari spreadsheet)
+    var rg = (!meter && d.ringkas) ? d.ringkas.map(function (x) { return x.kat === kat ? { kat: x.kat, label: x.label, total: total, jumlah: n } : x; }) : null;
+
+    if (DET.jenis === 'total') {
+      var hari = Number(d.hariIni.slice(8, 10));
+      var sampai = function (a) { return jumlahRp(a.filter(function (x) { return x.tglIso && Number(x.tglIso.slice(8, 10)) <= hari; })); };
+      var curS = sampai(rows), prevS = sampai(prow), prevFull = jumlahRp(prow), kal, lb = pr && pr.label ? esc(pr.label) : 'bulan lalu';
+      if (!pr || !pr.ada || !prevFull) kal = '<div class="kecil">Belum ada data bulan lalu untuk dibandingkan.</div>';
+      else if (!prevS) kal = '<div class="kecil">' + lb + ' belum ada pembelian sampai tanggal ' + hari + ' (total ' + esc(rp(prevFull)) + ').</div>';
+      else {
+        var sel = curS - prevS, pct = Math.round(Math.abs(sel) / prevS * 100);
+        kal = '<div><b class="' + (sel > 0 ? 'naik' : sel < 0 ? 'turun' : '') + '">' + (sel > 0 ? '▲ naik ' : sel < 0 ? '▼ turun ' : 'Sama ') +
+          (sel ? esc(rp(Math.abs(sel))) + ' (' + pct + '%)' : '') + '</b> <span class="kecil">dibanding ' + lb + ' sampai tgl ' + hari + '</span></div>' +
+          '<div class="kecil">Sampai tgl ' + hari + ': ' + esc(rp(curS)) + ' vs ' + esc(rp(prevS)) + ' · total ' + lb + ' ' + esc(rp(prevFull)) + '</div>';
+      }
+      var tiles = tile('Jumlah transaksi', n + '') + tile('Rata-rata / transaksi', esc(rp(total / n))) +
+        tile('Terbesar', esc(rp(maks.nominal)), esc(tglSingkat(maks))) + tile('Terkecil', esc(rp(min.nominal)), esc(tglSingkat(min)));
+      var kw = pln ? rows.filter(function (x) { return x.kwh; }) : [];
+      if (kw.length) {
+        var tkw = jumlahKwh(kw);
+        tiles += tile('kWh dibeli', esc(fmtKwh(tkw)) + ' kWh', kw.length < n ? 'dari ' + kw.length + ' transaksi' : '') +
+          tile('Harga rata-rata', esc(rp(jumlahRp(kw) / tkw)) + '/kWh');
+      }
+      var porsi = '', all = 0;
+      if (rg) rg.forEach(function (x) { all += x.total; });
+      if (rg && all > 0) {
+        porsi = '<h4 class="det-h">Porsi dari semua tagihan bulan ini</h4>' + rg.map(function (x) {
+          var p = Math.round(x.total / all * 100);
+          return '<div class="bln-row"><span class="nm">' + (IKON_KAT[x.kat] || '') + ' ' + esc(x.label) + '</span><span class="bar"><i style="width:' + p + '%"></i></span><b>' + p + '%</b></div>';
+        }).join('') + '<div class="kecil" style="margin-top:6px">Total semua kategori ' + esc(rp(all)) + '</div>';
+      }
+      var cum = 0;
+      h = '<div class="det-besar">' + esc(rp(total)) + '</div>' + kal + '<div class="det-grid">' + tiles + '</div>' + grup + porsi +
+        '<h4 class="det-h">Terdiri dari ' + n + ' transaksi</h4><div class="det-list">' + urut.map(function (x) {
+          cum += x.nominal || 0;
+          var ket = tglPanjang(x.tglIso) || x.tgl;
+          if (pln && x.kwh) ket += ' · ' + fmtKwh(x.kwh) + ' kWh';
+          return '<div class="det-tx"><div class="tg">' + tglKotak(x) + '</div><div class="isi"><b>' + esc(pln ? labelMeter(x.noPln) : (x.noPln || KI.label)) + '</b><small>' + esc(ket) + '</small></div>' +
+            '<div class="kn"><b>' + esc(rp(x.nominal)) + '</b><small>Σ ' + esc(rp(cum)) + '</small></div></div>';
+        }).join('') + '</div><div class="totalbar"><span>Total ' + esc(r.label) + '</span><span>' + esc(rp(total)) + '</span></div>';
+      if (pln && !meter && r.totalAll !== null && r.totalAll !== undefined) {
+        h += '<div class="totalbar all2"><span>Total keseluruhan</span><span>' + esc(rp(r.totalAll)) + '</span></div>';
+      }
+      h += '<div class="kecil" style="margin-top:8px">Angka Σ menunjukkan bagaimana total terbentuk; baris terakhir sama dengan total bulan ini.</div>';
+    } else {
+      var kat2 = '';
+      if (rg) {
+        var sj = 0; rg.forEach(function (x) { sj += x.jumlah; });
+        kat2 = '<div class="kecil" style="margin-top:8px">Semua kategori bulan ini: ' + sj + ' transaksi (' + rg.map(function (x) { return esc(x.label) + ' ' + x.jumlah; }).join(' · ') + ')</div>';
+      }
+      h = '<div class="det-besar">' + n + ' transaksi</div><div class="kecil">Total ' + esc(rp(total)) + ' · ' + esc(r.label) + '</div>' +
+        '<div class="det-grid">' + tile('Transaksi pertama', esc(tglSingkat(urut[0])), esc(rp(urut[0].nominal))) +
+        tile('Transaksi terakhir', esc(tglSingkat(urut[n - 1])), esc(rp(urut[n - 1].nominal))) +
+        tile('Total', esc(rp(total))) + tile('Rata-rata / transaksi', esc(rp(total / n))) + '</div>' + kat2 + grup +
+        '<h4 class="det-h">Semua transaksi (terbaru di atas)</h4>' + urut.slice().reverse().map(function (x) { return itemHtml(x, false); }).join('') +
+        '<button type="button" class="btn sekunder" id="detKeRw" data-go="riwayat" style="margin-top:14px">Buka di Riwayat untuk ubah / hapus</button>';
+    }
+    box.innerHTML = h;
+  }
+  function tutupDetail() {
+    $('detBox').classList.remove('tampil'); DET.req++;
+    var p = DET.pemicu; DET.pemicu = null;
+    if (p && p.focus && document.contains(p)) { try { p.focus(); } catch (e) { /* abaikan */ } }
+  }
+  $('detTutup').onclick = tutupDetail;
+  $('detBox').addEventListener('click', function (e) {
+    var t = e.target;
+    if (t === this) { tutupDetail(); return; }
+    if (t.closest && t.closest('#detKeRw')) { S.riwayatKey = S.bulanIni; S.modeR = 'bulan'; isiPilihan(); }   // Riwayat langsung membuka bulan ini
+    if (t.closest && t.closest('[data-go]')) tutupDetail();
+  });
+  document.addEventListener('click', function (e) {
+    var el = e.target && e.target.closest ? e.target.closest('[data-detail]') : null;
+    if (el) bukaDetail(el.getAttribute('data-detail'));
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && $('detBox').classList.contains('tampil') && !$('viewer').classList.contains('tampil')) tutupDetail();
+  });
 
   /* ---------- nominal (dropdown + ketik manual) ---------- */
   var comboAktif = -1;
