@@ -506,6 +506,9 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
 .kat-nama{font-weight:700;margin-bottom:8px}
 .lp-aksi{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media (max-width:420px){.lp-aksi{grid-template-columns:1fr}}
+.doc svg{max-width:100%;height:auto;display:block}
+.doc svg,.doc i{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.doc .rapat th,.doc .rapat td{padding:4px 5px;font-size:11.5px}
 </style>
 </head>
 <body>
@@ -711,7 +714,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     <div class="katbar no-print" data-katbar></div>
     <div class="kartu no-print">
       <div class="row2">
-        <div class="f"><label for="lpJenis">Jenis</label><select id="lpJenis"><option value="bulan">Bulanan</option><option value="tahun">Tahunan</option></select></div>
+        <div class="f"><label for="lpJenis">Jenis</label><select id="lpJenis"><option value="bulan">Bulanan</option><option value="tahun">Tahunan</option><option value="gabungan">Tahunan · semua kategori</option></select></div>
         <div class="f"><label for="lpPeriode">Periode</label><select id="lpPeriode"></select></div>
       </div>
       <div class="f hide" id="wrapLpMeter"><label for="lpMeter">Meter</label><select id="lpMeter"></select></div>
@@ -2685,10 +2688,84 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     }
     return h + '<div class="doc-foot">Dicetak ' + esc(tglPanjang(S.hariIni)) + ' · ' + esc(APP_NAMA) + '</div>';
   }
+  /* ---------- laporan tahunan gabungan (semua kategori) ---------- */
+  var WARNA_KAT = { pln: '#0b5ea8', pdam: '#1aa6a6', wifi: '#8e5bd1', bpjs: '#2e9e5b', kuota: '#e08a00' };
+  function aturLaporanUI() {
+    var gab = $('lpJenis').value === 'gabungan', kb = document.querySelector('#v-laporan .katbar');
+    if (kb) kb.classList.toggle('hide', gab);                                   // gabungan tidak memilih satu kategori
+    $('wrapLpMeter').classList.toggle('hide', gab || S.kat !== 'pln' || !SET.meter.length);
+  }
+  function bangunGabungan(y, data) {
+    var m, tot = 0, jml = 0, bt = [], h, kotak = function (c) { return '<i style="display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;background:' + c + '"></i>'; };
+    for (m = 0; m < 12; m++) { var t = 0; data.forEach(function (d) { t += d.per[m].t; }); bt.push(t); tot += t; }
+    data.forEach(function (d) { d.per.forEach(function (p) { jml += p.n; }); });
+    h = '<h2>Laporan Tahunan Semua Tagihan</h2><div class="doc-sub">Periode: <b>Tahun ' + y + '</b> · ' + data.length + ' kategori</div>';
+    if (!tot) return h + '<div class="kosong">Tidak ada transaksi pada tahun ini.</div>';
+    var mulai = 0, akhir = (y === S.tahunIni) ? S.bulanIniIdx : 11, tinggi = 0;
+    while (mulai < 11 && !bt[mulai]) mulai++;
+    for (m = 0; m < 12; m++) { if (bt[m] > bt[tinggi]) tinggi = m; if (bt[m] && m > akhir) akhir = m; }
+    var nBln = Math.max(1, akhir - mulai + 1);
+    h += '<div class="ring"><span>Total: <b>' + esc(rp(tot)) + '</b></span><span>Transaksi: <b>' + jml + '</b></span><span>Rata-rata / bulan: <b>' + esc(rp(tot / nBln)) +
+      '</b></span><span>Bulan tertinggi: <b>' + esc(BULAN[tinggi]) + ' (' + esc(rp(bt[tinggi])) + ')</b></span></div>';
+
+    // grafik batang bertumpuk per bulan (warna = kategori; angkanya ada di tabel)
+    var base = 138, atas = 22, mx = Math.max.apply(null, bt), lebar = 304 / 12, bw = Math.min(20, lebar * 0.66), y0 = base;
+    var svg = '<svg viewBox="0 0 320 168" role="img" aria-label="Grafik pengeluaran per bulan menurut kategori"><line x1="8" y1="' + base + '" x2="312" y2="' + base + '" stroke="#bbb"/>';
+    for (m = 0; m < 12; m++) {
+      var x = 8 + m * lebar + (lebar - bw) / 2; y0 = base;
+      data.forEach(function (d) {
+        var hh = Math.round((base - atas) * d.per[m].t / mx);
+        if (!hh) return;
+        y0 -= hh;
+        svg += '<rect x="' + x.toFixed(1) + '" y="' + y0 + '" width="' + bw.toFixed(1) + '" height="' + hh + '" fill="' + (WARNA_KAT[d.kat] || '#888') + '"/>';
+      });
+      if (bt[m]) svg += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (y0 - 3) + '" font-size="8" font-weight="700" fill="#333" text-anchor="middle">' + rpSingkat(bt[m]) + '</text>';
+      svg += '<text x="' + (x + bw / 2).toFixed(1) + '" y="153" font-size="8.5" fill="#555" text-anchor="middle">' + BULAN[m].slice(0, 3) + '</text>';
+    }
+    h += svg + '</svg><div class="ring" style="margin-top:6px">' + data.map(function (d) { return '<span>' + kotak(WARNA_KAT[d.kat] || '#888') + esc(d.label) + '</span>'; }).join('') + '</div>';
+
+    h += '<h3>Rekap per kategori</h3><table><thead><tr><th>Kategori</th><th class="r">Transaksi</th><th class="r">Total</th><th class="r">Porsi</th><th class="r">Rata-rata / bulan</th></tr></thead><tbody>';
+    data.forEach(function (d) {
+      var n = 0, s = 0; d.per.forEach(function (p) { n += p.n; s += p.t; });
+      h += '<tr><td>' + kotak(WARNA_KAT[d.kat] || '#888') + esc(d.label) + '</td><td class="r">' + n + '</td><td class="r">' + esc(rp(s)) + '</td><td class="r">' + Math.round(s / tot * 100) + '%</td><td class="r">' + esc(rp(s / nBln)) + '</td></tr>';
+    });
+    h += '</tbody><tfoot><tr><td>Total</td><td class="r">' + jml + '</td><td class="r">' + esc(rp(tot)) + '</td><td class="r">100%</td><td class="r">' + esc(rp(tot / nBln)) + '</td></tr></tfoot></table>';
+
+    h += '<h3>Rekap per bulan</h3><table class="rapat"><thead><tr><th>Bulan</th>' + data.map(function (d) { return '<th class="r">' + esc(d.label) + '</th>'; }).join('') + '<th class="r">Total</th></tr></thead><tbody>';
+    for (m = 0; m <= akhir; m++) {
+      h += '<tr><td>' + esc(BULAN[m]) + '</td>' + data.map(function (d) { return '<td class="r">' + (d.per[m].t ? esc(rp(d.per[m].t)) : '–') + '</td>'; }).join('') + '<td class="r"><b>' + (bt[m] ? esc(rp(bt[m])) : '–') + '</b></td></tr>';
+    }
+    h += '</tbody><tfoot><tr><td>Total</td>' + data.map(function (d) { var s = 0; d.per.forEach(function (p) { s += p.t; }); return '<td class="r">' + esc(rp(s)) + '</td>'; }).join('') + '<td class="r">' + esc(rp(tot)) + '</td></tr></tfoot></table>';
+    return h + '<div class="doc-foot">Dicetak ' + esc(tglPanjang(S.hariIni)) + ' · ' + esc(APP_NAMA) + '</div>';
+  }
+  async function muatGabungan(doc, token, y) {
+    doc.innerHTML = '<div class="kosong">Menyiapkan laporan semua kategori…</div>';
+    try {
+      var a = y * 12, hasil = await Promise.all(S.kategori.map(function (K) { return run('getTransaksi', PIN, a, a + 11, false, K.kat); }));
+      if (token !== S.reqLap) return;
+      var data = S.kategori.map(function (K, i) {
+        var per = [], rows = [], m;
+        for (m = 0; m < 12; m++) per.push({ n: 0, t: 0 });
+        ((hasil[i] && hasil[i].bulan) || []).forEach(function (bl) {
+          (bl.rows || []).forEach(function (x) {
+            if (!(x.nominal || x.tgl)) return;
+            per[bl.k % 12].n++; per[bl.k % 12].t += x.nominal || 0; rows.push(x);
+          });
+        });
+        return { kat: K.kat, label: K.label, per: per, rows: rows };
+      });
+      doc.innerHTML = bangunGabungan(y, data);
+      S.judulLaporan = 'Laporan Tahunan Semua Tagihan ' + y;
+      S.csvGab = true;
+      S.csvRows = [].concat.apply([], data.map(function (d) { return d.rows; })).sort(function (p, q) { return (p.tglIso || '').localeCompare(q.tglIso || '') || p.row - q.row; });
+    } catch (e) { if (token === S.reqLap) doc.innerHTML = '<div class="pesan err">❌ ' + esc(e.message) + '</div>'; }
+  }
   async function muatLaporan() {
     if (!S.siap) return;
+    aturLaporanUI();
     var doc = $('laporanDoc'), token = ++S.reqLap, jenis = $('lpJenis').value, v = $('lpPeriode').value, meter = mLp();
     if (!v) { doc.innerHTML = '<div class="kosong">Belum ada data untuk dilaporkan.</div>'; return; }
+    if (jenis === 'gabungan') return muatGabungan(doc, token, Number(v));
     doc.innerHTML = '<div class="kosong">Menyiapkan laporan…</div>';
     try {
       var y, m0, a, b, bulanRows = [], k;
@@ -2698,6 +2775,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
       if (token !== S.reqLap) return;
       for (k = a; k <= b; k++) bulanRows.push({ m0: k % 12, rows: rowsBulan(k, meter) || [] });
       doc.innerHTML = bangunLaporan(jenis, y, m0, bulanRows, meter);
+      S.csvGab = false;
       S.csvRows = [].concat.apply([], bulanRows.map(function (b) { return b.rows; })).sort(function (p, q) { return (p.tglIso || '').localeCompare(q.tglIso || '') || p.row - q.row; });
       S.judulLaporan = 'Laporan ' + katInfo(S.kat).label + ' ' + (jenis === 'bulan' ? BULAN[m0] + ' ' + y : y) + (meter ? ' - ' + (namaMeter(meter) || meter) : '');
     } catch (e) { if (token === S.reqLap) doc.innerHTML = '<div class="pesan err">❌ ' + esc(e.message) + '</div>'; }
@@ -2724,9 +2802,9 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     var rows = S.csvRows || [];
     if (!rows.length) { toast('Tidak ada data untuk diunduh.', 'err'); return; }
     var KI = katInfo(S.kat), pln = S.kat === 'pln', kd = function (n) { return n ? String(n).replace('.', ',') : ''; };
-    var baris = [['Tanggal', 'Kategori', pln ? 'No. PLN' : KI.idLabel, 'Nama meter', 'Nominal (Rp)', 'kWh', 'Saldo meter (kWh)']];
+    var baris = [['Tanggal', 'Kategori', S.csvGab ? 'No. PLN / ID pelanggan' : (pln ? 'No. PLN' : KI.idLabel), 'Nama meter', 'Nominal (Rp)', 'kWh', 'Saldo meter (kWh)']];
     rows.forEach(function (x) {
-      baris.push([csvSel(x.tgl), csvSel(KI.label), csvSel(x.noPln), csvSel(pln ? namaMeter(x.noPln) : ''), csvSel(x.nominal, true), csvSel(kd(x.kwh), true), csvSel(kd(x.saldo), true)]);
+      baris.push([csvSel(x.tgl), csvSel(katInfo(x.kat || S.kat).label), csvSel(x.noPln), csvSel((x.kat || S.kat) === 'pln' ? namaMeter(x.noPln) : ''), csvSel(x.nominal, true), csvSel(kd(x.kwh), true), csvSel(kd(x.saldo), true)]);
     });
     baris.push(['Total', '', '', '', jumlahRp(rows), '', '']);
     var blob = new Blob(['\uFEFF' + baris.map(function (r) { return r.join(';'); }).join('\r\n')], { type: 'text/csv;charset=utf-8' });
