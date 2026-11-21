@@ -823,7 +823,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
   // ╔══════════════════════════════════════════════════════════════╗
   // ║  TEMPEL DISINI  →  URL Web App Code.gs (berakhiran /exec)    ║
   // ╚══════════════════════════════════════════════════════════════╝
-  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbwSUtnleWiPa3DjMAdH5K7Z-CqmsV7t6fkjztS3SVCziYlin64acvkqhrZg1GAltaGSHA/exec';
+  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbyibrBmnmQLHou5SS_Wpo4URld2Pczt84EtXRBXgtrAw_4oMnhzCEgfpcHtoSczQ6eNdw/exec';
 
   var BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   var HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
@@ -1191,11 +1191,11 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
   }
   async function muatDataBeranda() {
     var paksa = S.paksa; S.paksa = false;   // paksa = lewati cache server (mis. baru kembali ke aplikasi / sheet diubah langsung)
+    if (S.kat === 'pln' && !S.anal) muatAnalisis(paksa);   // jalan bersamaan dengan grafik, tidak menunggu giliran
     try {
       await ambilData(S.kunciIni - 12, S.kunciIni, paksa);
       renderBeranda();
     } catch (e) { $('trenSvg').innerHTML = '<div class="kosong">Grafik gagal dimuat: ' + esc(e.message) + '</div>'; }
-    if (S.kat === 'pln' && !S.anal) muatAnalisis(paksa);
   }
   $('berMeter').onchange = function () { S.berMeter = this.value; renderBeranda(); };
   $('segTren').addEventListener('click', function (e) {
@@ -1911,8 +1911,9 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
 
   /* ---------- init ---------- */
   async function muatRingkas() {
-    var d = await run('getInit', PIN);
-    S.nomor = d.nomorBerikut; S.hariIni = d.hariIni;
+    var d = await run('getInit', PIN, true);   // true = jangan hitung nomor file dulu (memindai folder Drive itu lambat)
+    if (d.nomorBerikut != null) S.nomor = d.nomorBerikut;
+    S.hariIni = d.hariIni;
     S.daftar = d.daftar || [];
     S.bulanIni = d.tahun + '-' + d.bulan;
     S.kunciIni = d.tahun * 12 + d.bulan - 1; S.tahunIni = d.tahun; S.bulanIniIdx = d.bulan - 1;
@@ -1926,6 +1927,9 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     $('tgl').max = addDays(d.hariIni, 7);
     updateNama(); updateInfoBulan();
     muatDataBeranda();                 // grafik & analisis dimuat di latar belakang
+    if (d.nomorBerikut == null) {      // nomor file untuk pratinjau nama nota: cukup siap sebelum form Transaksi dibuka
+      run('getNomorBerikutnya', PIN).then(function (n) { S.nomor = n; updateNama(); }).catch(function () { /* nama file tetap '…' */ });
+    }
     return d;
   }
   function bukaApp() { document.documentElement.classList.remove('kunci'); }   // tampilkan dashboard & aktifkan scroll lagi
@@ -1983,14 +1987,15 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     }
     async function kirim() {
       if (sibuk || buf.length < MIN) return;
-      sibuk = true; go.disabled = true; el.classList.add('cek'); $('lgGoTeks').textContent = 'Memeriksa…';
+      sibuk = true; go.disabled = true; el.classList.add('cek'); $('lgGoTeks').textContent = 'Memuat…';
       try {
-        await run('cekPin', buf);
-        PIN = buf; tahan = true; el.classList.remove('cek'); el.classList.add('ok');
-        await Promise.all([muatAwal(), new Promise(function (r) { setTimeout(r, 950); })]);
+        PIN = buf; tahan = true;             // PIN diperiksa server lewat getInit: tidak ada permintaan cekPin terpisah lagi
+        await muatAwal();
+        el.classList.remove('cek'); el.classList.add('ok');
+        await new Promise(function (r) { setTimeout(r, 450); });   // kilas hijau singkat sebelum layar login memudar
         try { sessionStorage.setItem('pln_pin', PIN); } catch (x) {}
         tahan = false; tutup();
-      } catch (er) { gagal(er.message); }
+      } catch (er) { PIN = ''; gagal(er.message); }
     }
 
     $('lgPad').addEventListener('click', function (e) {
