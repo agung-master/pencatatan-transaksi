@@ -260,6 +260,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
 .vw-top>div{display:flex;gap:8px;align-items:center;flex:none}
 .vw-top button.x{border:0;background:rgba(255,255,255,.16);color:#fff;width:38px;height:38px;border-radius:12px;cursor:pointer;font-size:17px}
 .vw-stage{flex:1;min-height:0;position:relative;overflow:hidden;touch-action:none;background:#111;display:flex;align-items:center;justify-content:center}
+.vw-stage.pdf{touch-action:auto}
 .vw-stage img{max-width:100%;max-height:100%;transform-origin:center center;user-select:none;-webkit-user-drag:none;will-change:transform}
 .vw-stage iframe{width:100%;height:100%;border:0;background:#fff}
 .vw-aksi{display:flex;gap:10px;justify-content:center;padding:12px 14px calc(14px + env(safe-area-inset-bottom))}
@@ -608,7 +609,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     <div class="f" id="edKwhWrap"><label for="edKwh">Jumlah kWh (opsional)</label><input id="edKwh" inputmode="decimal" placeholder="mis. 133,4"></div>
     <div class="f" id="edSaldoWrap"><label for="edSaldo">Saldo meter setelah isi ulang, kWh (opsional)</label><input id="edSaldo" inputmode="decimal" placeholder="mis. 165,8"></div>
     <div class="hint" style="margin:-6px 0 12px">Nota tidak diganti. Nama file nota di Drive ikut menyesuaikan tanggal &amp; nominal baru.</div>
-    <div id="edErr" class="pesan err" style="margin-bottom:10px"></div>
+    <div id="edErr" class="pesan" style="margin-bottom:10px"></div>
     <div class="baris">
       <button type="button" class="btn sekunder" id="edBatal">Batal</button>
       <button type="button" class="btn" id="edSimpan"><span class="spin"></span><span id="edSimpanTeks">Simpan</span></button>
@@ -623,7 +624,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   <form class="kartu" id="pinForm">
     <h3 style="margin:0 0 10px;font-size:17px">Masukkan PIN</h3>
     <div class="f"><input id="pinInput" type="password" inputmode="numeric" placeholder="PIN"></div>
-    <div id="pinErr" class="pesan err" style="margin-bottom:10px"></div>
+    <div id="pinErr" class="pesan" style="margin-bottom:10px"></div>
     <button class="btn" type="submit">Masuk</button>
   </form>
 </div>
@@ -647,7 +648,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   // ╔══════════════════════════════════════════════════════════════╗
   // ║  TEMPEL DISINI  →  URL Web App Code.gs (berakhiran /exec)    ║
   // ╚══════════════════════════════════════════════════════════════╝
-  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbzanTtZioo7JH8straDF537uTtgvvJcFeUSsmjC0XNHWR5Hq_qLSM2ASVurcer4G9c6Kg/exec';
+  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbx0GdZlDw4g7ICVg5PtiUbB4IZWekPCcTqHBEwIqidxQ-UBbisIT_MD5I8DIivJFbMdig/exec';
 
   var BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   var HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
@@ -672,7 +673,8 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     file: null, sending: false, nomor: 0, hariIni: '', daftar: [], bulanIni: '', riwayatKey: '',
     siap: false, view: 'beranda', tglManual: false, muatTerakhir: 0, reqRiwayat: 0, reqLap: 0,
     cache: {}, anal: null, init: null, reg: {}, regN: 0, kunciIni: 0, tahunIni: 0, bulanIniIdx: 0,
-    berMeter: '', trenN: 6, trenVals: null, modeR: 'bulan', lastR: null, cariAktif: false, judulLaporan: ''
+    berMeter: '', trenN: 6, trenVals: null, modeR: 'bulan', lastR: null, cariAktif: false, judulLaporan: '',
+    reqAnal: 0, paksa: false, setTerisi: false
   };
   // Kategori aktif + cache data per kategori (S.cache selalu menunjuk ke cache kategori aktif; S.cache = {} mengosongkan semuanya)
   S.kat = 'pln'; S.kategori = KAT_DEF.slice(); S.nomorKat = {}; S._ca = {}; S.idKat = {};
@@ -759,6 +761,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     if (nama === 'riwayat') muatRiwayat();
     if (nama === 'laporan') muatLaporan();
     if (nama === 'beranda' && S.siap) renderBeranda();
+    if (nama === 'pengaturan' && S.siap) isiFormPengaturan();   // selalu tampilkan nilai tersimpan (buang isian yang belum disimpan)
   }
   function go(nama) {
     if (location.hash === '#' + nama) tampilView(nama);
@@ -785,7 +788,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   function fmtKwh(n) { return Number(n).toLocaleString('id-ID', { maximumFractionDigits: 2 }); }
   function rpSingkat(n) {
     if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '').replace('.', ',') + 'jt';
-    if (n >= 1000) return Math.round(n / 1000) + 'rb';
+    if (n >= 1000) { var rb = Math.round(n / 1000); return rb >= 1000 ? '1jt' : rb + 'rb'; }   // 999.600 -> "1jt", bukan "1000rb"
     return String(n);
   }
   function jumlahRp(rows) { var t = 0; rows.forEach(function (x) { t += x.nominal || 0; }); return t; }
@@ -805,16 +808,20 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     clearTimeout(toastT);
     toastT = setTimeout(function () { t.className = 'toast'; }, jenis === 'err' ? 6000 : 3500);
   }
-  function invalidasi() { S.cache = {}; S.anal = null; }
+  function invalidasi() { S.cache = {}; S.anal = null; S.reqAnal++; }   // reqAnal++: hasil analisis yang masih di jalan dibuang
 
   /* ---------- data banyak bulan (cache di memori) ---------- */
   async function ambilData(a, b, force) {
     var kat = S.kat, ca = (S._ca[kat] = S._ca[kat] || {}), ada = {}, perlu = [], k;
     S.daftar.forEach(function (x) { if (x.ada) ada[x.y * 12 + x.m - 1] = 1; });
     for (k = a; k <= b; k++) if (ada[k] && (force || !ca[k])) perlu.push(k);
-    if (perlu.length) {
-      var r = await run('getTransaksi', PIN, perlu[0], perlu[perlu.length - 1], !!force, kat);
+    // Server membatasi satu permintaan maksimal 240 bulan: pecah bila rentangnya lebih lebar (data puluhan tahun).
+    for (var i = 0; i < perlu.length;) {
+      var j = i;
+      while (j + 1 < perlu.length && perlu[j + 1] - perlu[i] <= 200) j++;
+      var r = await run('getTransaksi', PIN, perlu[i], perlu[j], !!force, kat);
       (r.bulan || []).forEach(function (x) { ca[x.k] = x; });
+      i = j + 1;
     }
     for (k = a; k <= b; k++) if (!ca[k]) ca[k] = { k: k, rows: [], total: 0, none: true };
   }
@@ -908,8 +915,10 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     $('angIsi').style.width = Math.min(100, pct) + '%';
     $('angPct').textContent = pct + '%';
     $('angPct').className = kelas === 'merah' ? 'naik' : kelas === 'kuning' ? 'warn' : '';
-    $('angTeks').textContent = rp(pakai) + ' dari ' + rp(a) + ' · ' +
-      (pakai > a ? 'melebihi batas ' + rp(pakai - a) : (kelas ? 'hampir mencapai batas, sisa ' : 'sisa ') + (pakai > a ? '' : rp(a - pakai)));
+    var ket = pakai > a ? 'melebihi batas ' + rp(pakai - a)
+      : pakai === a ? 'tepat mencapai batas'
+      : (kelas ? 'hampir mencapai batas, sisa ' : 'sisa ') + rp(a - pakai);
+    $('angTeks').textContent = rp(pakai) + ' dari ' + rp(a) + ' · ' + ket;
   }
 
   function nilaiBulan(k, meter) { var r = rowsBulan(k, meter); return r ? jumlahRp(r) : 0; }
@@ -998,16 +1007,20 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
       return h;
     }).join('');
   }
-  async function muatAnalisis() {
-    try { S.anal = await run('getAnalisisKwh', PIN); } catch (e) { S.anal = null; }
+  async function muatAnalisis(paksa) {
+    var tk = ++S.reqAnal, hasil = null;
+    try { hasil = await run('getAnalisisKwh', PIN, !!paksa); } catch (e) { hasil = null; }
+    if (tk !== S.reqAnal) return;          // data berubah (simpan/ubah/hapus) selagi menunggu: jangan timpa dengan hasil usang
+    S.anal = hasil;
     renderKwh();
   }
   async function muatDataBeranda() {
+    var paksa = S.paksa; S.paksa = false;   // paksa = lewati cache server (mis. baru kembali ke aplikasi / sheet diubah langsung)
     try {
-      await ambilData(S.kunciIni - 12, S.kunciIni);
+      await ambilData(S.kunciIni - 12, S.kunciIni, paksa);
       renderBeranda();
     } catch (e) { $('trenSvg').innerHTML = '<div class="kosong">Grafik gagal dimuat: ' + esc(e.message) + '</div>'; }
-    if (S.kat === 'pln' && !S.anal) muatAnalisis();
+    if (S.kat === 'pln' && !S.anal) muatAnalisis(paksa);
   }
   $('berMeter').onchange = function () { S.berMeter = this.value; renderBeranda(); };
   $('segTren').addEventListener('click', function (e) {
@@ -1033,10 +1046,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   /* ---------- nominal (dropdown + ketik manual) ---------- */
   var comboAktif = -1;
   function nominalRaw() { return $('nominal').value.replace(/\D/g, ''); }
-  function formatNominal() {
-    var raw = nominalRaw().replace(/^0+/, '');
-    $('nominal').value = raw ? 'Rp ' + ribuan(raw) : '';
-  }
+  function formatNominal() { formatRupiahInput($('nominal')); }
   function renderCombo() {
     var cur = nominalRaw(), h = '';
     PRESET.forEach(function (n, i) {
@@ -1221,17 +1231,21 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
 
   async function prosesFile(file) {
     hapusPesan();
-    var blob, mime, ext;
-    if (file.type === 'application/pdf') {
+    var blob, mime, ext, tipe = file.type || '';
+    if (!tipe) {   // sebagian pemilih file (Android / file manager) tidak mengisi type: tebak dari ekstensi nama file
+      var em = /\.(pdf|png|jpe?g|webp|gif)$/i.exec(file.name || '');
+      if (em) { var e0 = em[1].toLowerCase(); tipe = e0 === 'pdf' ? 'application/pdf' : e0 === 'png' ? 'image/png' : e0 === 'webp' ? 'image/webp' : e0 === 'gif' ? 'image/gif' : 'image/jpeg'; }
+    }
+    if (tipe === 'application/pdf') {
       blob = file; mime = 'application/pdf'; ext = '.pdf';
-    } else if (file.type === 'image/png' && file.size <= 3 * 1024 * 1024) {
+    } else if (tipe === 'image/png' && file.size <= 3 * 1024 * 1024) {
       blob = file; mime = 'image/png'; ext = '.png';   // screenshot bukti bayar: dipertahankan apa adanya
-    } else if (/^image\//.test(file.type)) {
+    } else if (/^image\//.test(tipe)) {
       try { blob = await kompres(file); mime = 'image/jpeg'; ext = '.jpg'; }
       catch (e) {
         var ok = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/gif': '.gif' };
-        if (!ok[file.type]) throw new Error('Format gambar tidak didukung. Gunakan JPG/PNG atau PDF.');
-        blob = file; mime = file.type; ext = ok[file.type];
+        if (!ok[tipe]) throw new Error('Format gambar tidak didukung. Gunakan JPG/PNG atau PDF.');
+        blob = file; mime = tipe; ext = ok[tipe];
       }
     } else {
       throw new Error('Format file harus gambar (JPG/PNG) atau PDF.');
@@ -1640,7 +1654,8 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
           if (mn && x.nominal < mn) return;
           if (mx && x.nominal > mx) return;
           if (kata) {
-            var jerami = (digits(x.noPln) + ' ' + namaMeter(x.noPln) + ' ' + x.tgl + ' ' + x.tglIso + ' ' + x.nominal + ' ' + ribuan(x.nominal)).toLowerCase();
+            // String(x.noPln) utuh: ID non-PLN bisa beralfabet (mis. "ABC-123"); digits() saja membuangnya
+            var jerami = (String(x.noPln || '') + ' ' + digits(x.noPln) + ' ' + namaMeter(x.noPln) + ' ' + x.tgl + ' ' + x.tglIso + ' ' + x.nominal + ' ' + ribuan(x.nominal)).toLowerCase();
             if (jerami.indexOf(kata) < 0) return;
           }
           hasil.push(x);
@@ -1659,7 +1674,19 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
       box.innerHTML = '<div class="pesan err">❌ ' + esc(e.message) + '</div>';
     }
   }
-  function formatRupiahInput(el) { var r = digits(el.value).replace(/^0+/, ''); el.value = r ? 'Rp ' + ribuan(r) : ''; }
+  // Memformat "Rp 1.234.567" sambil mempertahankan posisi kursor (tanpa ini kursor melompat ke akhir saat mengedit di tengah).
+  function formatRupiahInput(el) {
+    var awal = el.value, pos = null;
+    try { pos = el.selectionStart; } catch (e) { pos = null; }
+    var kiri = pos == null ? -1 : digits(awal.slice(0, pos)).replace(/^0+/, '').length;   // jumlah digit di kiri kursor
+    var r = digits(awal).replace(/^0+/, '');
+    el.value = r ? 'Rp ' + ribuan(r) : '';
+    if (kiri < 0 || document.activeElement !== el || !el.setSelectionRange) return;
+    var s = el.value, i = 0, n = 0;
+    if (kiri === 0) i = r ? 3 : 0;                       // sesudah awalan "Rp "
+    else { for (i = 0; i < s.length; i++) { if (s.charAt(i) >= '0' && s.charAt(i) <= '9') n++; if (n >= kiri) { i++; break; } } }
+    try { el.setSelectionRange(i, i); } catch (e) { /* abaikan */ }
+  }
   $('cMin').addEventListener('input', function () { formatRupiahInput(this); });
   $('cMaks').addEventListener('input', function () { formatRupiahInput(this); });
   $('cTerapkan').onclick = function () { S.cariAktif = true; muatRiwayat(); };
@@ -1757,6 +1784,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     if (Date.now() - S.muatTerakhir < 60000) return;
     var lama = S.hariIni;
     invalidasi();
+    S.paksa = true;                        // data server di-cache 10 menit; setelah ditinggal, ambil yang terbaru
     muatRingkas().then(function () {
       if (S.hariIni !== lama && !S.tglManual) { $('tgl').value = S.hariIni; updateNama(); updateInfoBulan(); }
       if (S.view === 'riwayat') muatRiwayat();
@@ -1820,7 +1848,9 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     PRESET = (s.preset && s.preset.length) ? s.preset.slice() : PRESET_DEF.slice();
     renderCombo();
     isiSemuaMeter();
-    if (S.view !== 'pengaturan') isiFormPengaturan();
+    // Jangan menimpa isian yang sedang diketik di halaman Pengaturan, KECUALI form belum pernah terisi
+    // (aplikasi dibuka langsung di #pengaturan: tanpa ini form tetap kosong sampai disimpan).
+    if (S.view !== 'pengaturan' || !S.setTerisi) isiFormPengaturan();
     syncPilihMeter();
   }
   function renderBarisMeter(list) {
@@ -1837,6 +1867,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
     });
   }
   function isiFormPengaturan() {
+    S.setTerisi = true;
     $('setPreset').value = SET.preset.join(', ');
     $('setBawaan').value = SET.noPlnBawaan || '';
     $('setAnggaran').value = SET.anggaran ? 'Rp ' + ribuan(SET.anggaran) : '';
@@ -1954,21 +1985,21 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
       var r = await run('editTransaksi', { pin: PIN, kat: x.kat, asal: { kat: x.kat, y: x.y, m: x.m, row: x.row, tglIso: x.tglIso, nominal: x.nominal },
         noPln: no, tanggal: t, nominal: n, kwh: kw, saldo: sa });
       tutupEdit();
-      toast(r.pindahBulan ? 'Tersimpan. Transaksi dipindahkan ke tab ' + r.sheet + '.' : 'Perubahan tersimpan.', r.catatan ? '' : 'ok');
+      toast((r.pindahBulan ? 'Tersimpan. Transaksi dipindahkan ke tab ' + r.sheet + '.' : 'Perubahan tersimpan.') + (r.catatan ? ' ' + r.catatan : ''), r.catatan ? '' : 'ok');
       await segarkanSetelahUbah();
     } catch (e) { $('edErr').className = 'pesan err'; $('edErr').textContent = e.message || 'Gagal menyimpan.'; }
     finally { btn.disabled = false; btn.classList.remove('load'); $('edSimpanTeks').textContent = 'Simpan'; }
   };
 
   /* ---------- pratinjau nota (zoom & geser) ---------- */
-  var VW = { s: 1, x: 0, y: 0, ptr: {}, jarak: 0, tapT: 0, memo: {}, urut: [] };
+  var VW = { s: 1, x: 0, y: 0, ptr: {}, jarak: 0, tapT: 0, memo: {}, urut: [], req: 0 };
   function vwTerapkan() { $('vwImg').style.transform = 'translate(' + VW.x + 'px,' + VW.y + 'px) scale(' + VW.s + ')'; }
   function vwSet(s, reset) {
     VW.s = Math.max(1, Math.min(8, s));
     if (VW.s === 1 || reset) { VW.x = 0; VW.y = 0; }
     vwTerapkan();
   }
-  function vwTutup() { $('viewer').classList.remove('tampil'); $('vwPdf').removeAttribute('src'); $('vwImg').removeAttribute('src'); }
+  function vwTutup() { VW.req++; $('viewer').classList.remove('tampil'); $('vwPdf').removeAttribute('src'); $('vwImg').removeAttribute('src'); }
   async function ambilNota(fid) {
     if (VW.memo[fid]) return VW.memo[fid];
     var n = await run('getNota', PIN, fid);
@@ -1981,22 +2012,29 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   }
   async function bukaNota(x) {
     if (!x.fid) { if (x.url) window.open(x.url, '_blank', 'noopener'); return; }
+    var tk = ++VW.req;                      // nota yang dibuka belakangan menang; hasil nota lama yang telat diabaikan
     $('viewer').classList.add('tampil');
     $('vwJudul').textContent = 'Nota · ' + rp(x.nominal);
     $('vwBuka').href = 'https://drive.google.com/file/d/' + x.fid + '/view';
     $('vwImg').classList.add('hide'); $('vwPdf').classList.add('hide'); $('vwAksi').classList.add('hide');
+    $('vwImg').removeAttribute('src'); $('vwPdf').removeAttribute('src');
+    $('vwStage').classList.remove('pdf');
     $('vwPesan').textContent = 'Memuat nota…';
     try {
       var n = await ambilNota(x.fid);
-      if (!$('viewer').classList.contains('tampil')) return;
+      if (tk !== VW.req || !$('viewer').classList.contains('tampil')) return;
       $('vwPesan').textContent = '';
       if (n.mime === 'application/pdf') {
+        $('vwStage').classList.add('pdf');   // PDF harus bisa di-scroll / dicubit di layar sentuh (touch-action:none hanya untuk gambar)
         $('vwPdf').src = n.url; $('vwPdf').classList.remove('hide');
       } else {
         vwSet(1, true);
         $('vwImg').src = n.url; $('vwImg').classList.remove('hide'); $('vwAksi').classList.remove('hide');
       }
-    } catch (e) { $('vwPesan').textContent = (e.message || 'Nota tidak dapat dimuat.') + ' Coba “Buka di Drive”.'; }
+    } catch (e) {
+      if (tk !== VW.req) return;
+      $('vwPesan').textContent = (e.message || 'Nota tidak dapat dimuat.') + ' Coba “Buka di Drive”.';
+    }
   }
   $('vwTutup').onclick = vwTutup;
   $('vwPlus').onclick = function () { vwSet(VW.s * 1.5); };
@@ -2078,7 +2116,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
       var pertama = bulanRows.filter(function (b) { return b.rows.length; })[0];
       var akhirIdx = (y === S.tahunIni) ? S.bulanIniIdx : 11;
       h += '<span>Rata-rata / bulan: <b>' + esc(rp(tot / Math.max(1, akhirIdx - (pertama ? pertama.m0 : 0) + 1))) + '</b></span>';
-    } else if (SET.anggaran && !meter) {
+    } else if (plnL && SET.anggaran && !meter) {     // anggaran hanya untuk PLN
       h += '<span>Anggaran: <b>' + esc(rp(SET.anggaran)) + '</b> (' + Math.round(tot / SET.anggaran * 100) + '% terpakai)</span>';
     }
     var rk = semua.filter(function (x) { return x.kwh; });
