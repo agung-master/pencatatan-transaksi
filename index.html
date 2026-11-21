@@ -303,36 +303,38 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
 .nav button .ic{width:21px;height:21px}
 
 /* ---------- login PIN ---------- */
-.login{position:fixed;inset:0;z-index:100;display:none;overflow:auto;padding:20px;color:#fff;
+.login{--k:clamp(40px,calc((100vh - 280px) / 6.2),76px);position:fixed;top:0;left:0;right:0;height:100vh;z-index:100;display:none;overflow:hidden;color:#fff;
   background:radial-gradient(120% 90% at 50% 0%,#0d5aa6 0%,#072b4f 48%,#04152a 100%);
   font-family:ui-rounded,"SF Pro Rounded","Segoe UI Variable Display",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   transition:opacity .55s ease,transform .55s cubic-bezier(.2,.7,.2,1),filter .55s}
-.login.tampil{display:flex}
+.login.tampil{display:block}
+@supports (height:100dvh){.login{height:100dvh;--k:clamp(40px,calc((100dvh - 280px) / 6.2),76px)}}
+.lg-scroll{position:relative;height:100%;overflow-x:hidden;overflow-y:auto;display:flex;padding:12px 20px}
 .login.selesai{opacity:0;transform:scale(1.06);filter:blur(6px);pointer-events:none}
 .lg-orb{position:absolute;border-radius:50%;filter:blur(72px);pointer-events:none;animation:lgDrift 24s ease-in-out infinite alternate}
 .lg-orb.a{width:340px;height:340px;left:-120px;top:-100px;background:#1e8bff;opacity:.45}
 .lg-orb.b{width:280px;height:280px;right:-100px;bottom:-100px;background:#f6c200;opacity:.16;animation-duration:30s}
 @keyframes lgDrift{to{transform:translate(80px,50px) scale(1.18)}}
-.lg-wrap{position:relative;margin:auto;width:100%;max-width:340px;display:flex;flex-direction:column;align-items:center;text-align:center}
-.lg-ring{width:clamp(96px,17vh,132px);height:auto;margin-bottom:6px;overflow:visible}
+.lg-wrap{position:relative;margin:auto;width:min(100%,max(calc(var(--k) * 4.6 + 30px),300px));display:flex;flex-direction:column;align-items:center;text-align:center}
+.lg-ring{width:calc(var(--k) * 1.5);height:auto;margin-bottom:6px;overflow:visible}
 .lg-ring circle{fill:none;stroke-width:5;stroke-linecap:round}
 .lg-ring .tr{stroke:rgba(255,255,255,.15);stroke-dasharray:100;animation:lgDraw 1.1s .1s backwards cubic-bezier(.5,0,.2,1)}
-.lg-ring .pg{stroke:#f6c200;stroke-dasharray:100;stroke-dashoffset:100;transform:rotate(-90deg);transform-box:fill-box;transform-origin:center;
-  filter:drop-shadow(0 0 6px rgba(246,194,0,.7));transition:stroke-dashoffset .45s cubic-bezier(.2,.9,.2,1),stroke .3s}
+.lg-ring .pg{stroke:#f6c200;opacity:0;stroke-dasharray:100;stroke-dashoffset:100;transform:rotate(-90deg);transform-box:fill-box;transform-origin:center;
+  filter:drop-shadow(0 0 6px rgba(246,194,0,.7));transition:stroke-dashoffset .45s cubic-bezier(.2,.9,.2,1),stroke .3s,opacity .2s}
 .lg-ring .bolt{fill:#f6c200;stroke:#f6c200;stroke-width:1.2;stroke-linejoin:round;transform-box:fill-box;transform-origin:center;
   filter:drop-shadow(0 0 8px rgba(246,194,0,.6));filter:drop-shadow(0 0 calc(4px + var(--c,0) * 18px) rgba(246,194,0,.9));
   animation:lgStrike .85s .5s backwards cubic-bezier(.2,1.5,.4,1);transition:fill .3s,stroke .3s}
 @keyframes lgDraw{from{stroke-dashoffset:100}}
 @keyframes lgStrike{0%{opacity:0;transform:scale(.2) rotate(-18deg)}60%{opacity:1;transform:scale(1.22) rotate(4deg)}}
 @keyframes lgUp{from{opacity:0;transform:translateY(18px)}}
-.lg-wrap h1{margin:8px 0 2px;font-size:24px;letter-spacing:-.3px;animation:lgUp .7s .85s backwards}
-.lg-wrap .sub{margin:0 0 16px;color:rgba(255,255,255,.72);font-size:14.5px;animation:lgUp .7s .95s backwards}
-.lg-panel{width:100%;padding:18px 18px 16px;border-radius:28px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+.lg-wrap h1{margin:6px 0 2px;font-size:24px;line-height:1.2;letter-spacing:-.3px;animation:lgUp .7s .85s backwards}
+.lg-wrap .sub{margin:0 0 14px;color:rgba(255,255,255,.72);font-size:14.5px;line-height:1.35;animation:lgUp .7s .95s backwards}
+.lg-panel{width:100%;padding:16px 16px 14px;border-radius:28px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
   box-shadow:0 24px 70px rgba(0,10,30,.45),inset 0 1px 0 rgba(255,255,255,.1);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
   animation:lgUp .8s 1.05s backwards cubic-bezier(.2,.8,.2,1)}
 .lg-in.geter{animation:lgShake .5s cubic-bezier(.36,.07,.19,.97)}
 @keyframes lgShake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(5px)}30%,50%,70%{transform:translateX(-9px)}40%,60%{transform:translateX(9px)}}
-.lg-dots{display:flex;justify-content:center;align-items:center;gap:9px;min-height:26px;margin:2px 0 6px}
+.lg-dots{display:flex;justify-content:center;align-items:center;gap:9px;min-height:24px;margin:0 0 4px}
 .lg-dots.penuh{animation:lgBump .3s}
 @keyframes lgBump{40%{transform:scale(1.08)}}
 .lg-dots i{width:15px;height:15px;display:grid;place-items:center;font-style:normal;font-weight:700;font-size:19px;line-height:1;font-variant-numeric:tabular-nums}
@@ -341,11 +343,11 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
 .lg-dots i.baru::before{animation:lgPop .32s cubic-bezier(.2,1.6,.4,1)}
 @keyframes lgPop{from{transform:scale(.2)}60%{transform:scale(1.5)}}
 .lg-dots.lihat i.on::before{content:attr(data-d);width:auto;height:auto;border:0;background:none;box-shadow:none;color:#f6c200;font-size:20px}
-.lg-msg{min-height:20px;margin:0 0 10px;font-size:13.5px;color:rgba(255,255,255,.62)}
+.lg-msg{min-height:19px;margin:0 0 8px;font-size:13.5px;line-height:1.4;color:rgba(255,255,255,.62)}
 .lg-msg.err{color:#ff9d9d}
-.lg-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(8px,1.6vh,12px);justify-items:center;margin-bottom:clamp(10px,2vh,16px)}
-.lg-key{width:clamp(56px,9.4vh,68px);aspect-ratio:1;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#fff;
-  font:600 clamp(22px,3.6vh,27px)/1 inherit;font-family:inherit;font-variant-numeric:tabular-nums;cursor:pointer;display:grid;place-items:center;
+.lg-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(var(--k) * .14);justify-items:center;margin-bottom:calc(var(--k) * .22)}
+.lg-key{width:var(--k);aspect-ratio:1;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#fff;
+  font-family:inherit;font-weight:600;font-size:calc(var(--k) * .4);line-height:1;font-variant-numeric:tabular-nums;cursor:pointer;display:grid;place-items:center;
   touch-action:manipulation;transition:transform .12s,background .2s,box-shadow .2s,color .2s}
 .lg-key:hover{background:rgba(255,255,255,.15)}
 .lg-key:active,.lg-key.tekan{transform:scale(.9);background:#f6c200;color:#1b2733;box-shadow:0 0 24px rgba(246,194,0,.5)}
@@ -353,18 +355,18 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
 .lg-key.aksi.on{color:#f6c200}
 .lg-key:disabled{opacity:.3;pointer-events:none}
 .lg-key svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.lg-go{width:100%;border:0;border-radius:16px;padding:15px;font:800 16px/1 inherit;font-family:inherit;color:#1b2733;background:#f6c200;cursor:pointer;
+.lg-go{width:100%;border:0;border-radius:16px;padding:14px;font-family:inherit;font-weight:800;font-size:16px;line-height:1.2;color:#1b2733;background:#f6c200;cursor:pointer;
   display:flex;align-items:center;justify-content:center;gap:10px;transition:opacity .25s,transform .15s,box-shadow .3s}
 .lg-go:not(:disabled){box-shadow:0 8px 28px rgba(246,194,0,.35)}
 .lg-go:not(:disabled):active{transform:scale(.97)}
-.lg-go:disabled{opacity:.3;cursor:not-allowed}
+.lg-go:disabled{background:rgba(255,255,255,.1);color:rgba(255,255,255,.45);box-shadow:none;cursor:not-allowed}
 .lg-go .spin{border-color:rgba(27,39,51,.25);border-top-color:#1b2733}
 .login.cek .lg-go .spin{display:inline-block}
 .lg-key:focus-visible,.lg-go:focus-visible{outline:3px solid #8fd0ff;outline-offset:3px}
 .login.salah .pg{stroke:#ff5d5d;filter:drop-shadow(0 0 8px rgba(255,93,93,.8))}
 .login.salah .bolt{fill:#ff8a8a;stroke:#ff8a8a}
 .login.salah .lg-dots i.on::before{background:#ff5d5d;border-color:#ff5d5d;box-shadow:0 0 12px rgba(255,93,93,.7)}
-.login.ok .pg{stroke:#3cf0a0;stroke-dashoffset:0!important;filter:drop-shadow(0 0 10px rgba(60,240,160,.8))}
+.login.ok .pg{stroke:#3cf0a0;opacity:1!important;stroke-dashoffset:0!important;filter:drop-shadow(0 0 10px rgba(60,240,160,.8))}
 .login.ok .bolt{fill:#fff;stroke:#fff;animation:lgSurge .7s}
 @keyframes lgSurge{40%{transform:scale(1.35)}}
 .login.ok .lg-panel{opacity:0;transform:translateY(14px) scale(.97);transition:opacity .5s,transform .5s}
@@ -696,7 +698,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
 <!-- LOGIN PIN -->
 <div class="login" id="login" role="dialog" aria-modal="true" aria-labelledby="lgJudul">
   <span class="lg-orb a"></span><span class="lg-orb b"></span>
-  <div class="lg-wrap">
+  <div class="lg-scroll"><div class="lg-wrap">
     <svg class="lg-ring" viewBox="0 0 160 160" aria-hidden="true">
       <circle class="tr" cx="80" cy="80" r="70" pathLength="100"/>
       <circle class="pg" id="lgPg" cx="80" cy="80" r="70" pathLength="100"/>
@@ -717,7 +719,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
       </div>
       <button type="button" class="lg-go" id="lgGo" disabled><span class="spin"></span><span id="lgGoTeks">Masuk</span></button>
     </div></div>
-  </div>
+  </div></div>
 </div>
 
 <!-- Dialog konfirmasi -->
@@ -739,7 +741,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
   // ╔══════════════════════════════════════════════════════════════╗
   // ║  TEMPEL DISINI  →  URL Web App Code.gs (berakhiran /exec)    ║
   // ╚══════════════════════════════════════════════════════════════╝
-  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbz5BjwyzkU4GXlnxdNAR3UGbGgsCKAoRkBouhnuxqHhiKWQiZDLDvxCSV6Dj3a67o6ENw/exec';
+  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbyNqrLJquPXQGJjLYWY8JrCsxfTCb844loeakxgDFknECmK7k0xqNKHVMA5vX5kMVntPg/exec';
 
   var BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   var HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
@@ -1869,7 +1871,7 @@ html[data-tema="gelap"] .ambil .opsi b{color:var(--teks)}
       for (var k = 0; k < tot; k++) h += k < n ? '<i class="on' + (baru && k === n - 1 ? ' baru' : '') + '" data-d="' + buf.charAt(k) + '"></i>' : '<i></i>';
       dots.innerHTML = h;
       dots.setAttribute('aria-label', n ? n + ' angka dimasukkan' : 'Belum ada angka');
-      pg.style.strokeDashoffset = 100 - n / MAX * 100;
+      pg.style.strokeDashoffset = 100 - n / MAX * 100; pg.style.opacity = n ? '1' : '0';
       el.style.setProperty('--c', n / MAX);
       go.disabled = sibuk || n < MIN; del.disabled = sibuk || !n;
     }
