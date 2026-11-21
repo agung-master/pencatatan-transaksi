@@ -495,6 +495,17 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
 .det-isi .bln-row .nm{width:112px}
 .det-isi .bln-row b{min-width:44px}
 @media (prefers-reduced-motion:reduce){.stat .kartu.klik{transition:none!important}}
+
+/* ================= v7: status tagihan, anggaran per kategori, unduh CSV ================= */
+.stt{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--garis);font-size:14px}
+.stt b{font-size:13px;text-align:right}
+#ringkasStatus{margin-bottom:6px}
+#ringkasStatus:empty{display:none}
+.kat-row{padding:12px 0;border-top:1px solid var(--garis)}
+.kat-row:first-child{border-top:0;padding-top:0}
+.kat-nama{font-weight:700;margin-bottom:8px}
+.lp-aksi{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:420px){.lp-aksi{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -527,12 +538,13 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
 
     <div class="kartu ringkas hide" id="kartuRingkas">
       <div class="kepala-kartu"><h3 id="ringkasJudul">Semua tagihan bulan ini</h3></div>
+      <div id="ringkasStatus"></div>
       <div id="ringkasIsi"></div>
       <div class="kecil" style="margin-top:8px">Ketuk satu kategori untuk membukanya.</div>
     </div>
 
     <div class="kartu hide" id="kartuAnggaran">
-      <div class="kepala-kartu"><h3>Anggaran bulan ini</h3><b id="angPct"></b></div>
+      <div class="kepala-kartu"><h3 id="angJudul">Anggaran bulan ini</h3><b id="angPct"></b></div>
       <div class="progres" id="angBar"><i id="angIsi" style="width:0"></i></div>
       <div id="angTeks" class="kecil"></div>
     </div>
@@ -703,7 +715,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
         <div class="f"><label for="lpPeriode">Periode</label><select id="lpPeriode"></select></div>
       </div>
       <div class="f hide" id="wrapLpMeter"><label for="lpMeter">Meter</label><select id="lpMeter"></select></div>
-      <button type="button" class="btn" id="lpCetak">Cetak / Simpan PDF</button>
+      <div class="lp-aksi"><button type="button" class="btn" id="lpCetak">Cetak / Simpan PDF</button><button type="button" class="btn sekunder" id="lpCsv">Unduh CSV (Excel)</button></div>
       <div class="hint">Di jendela cetak, pilih “Simpan sebagai PDF” sebagai printer.</div>
     </div>
     <div class="doc" id="laporanDoc"><div class="kosong">Memuat…</div></div>
@@ -726,7 +738,11 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
         <div class="hint">Bar progres di Beranda berubah kuning mulai 75% dan merah saat melewati batas.</div></div>
       <div class="f"><label for="setBawaan">No. PLN bawaan</label><input id="setBawaan" inputmode="numeric" maxlength="14" placeholder="Kosong = memakai No. PLN transaksi terakhir"></div>
 
-      <h4 class="sub-judul" style="margin-top:4px">Daftar meter</h4>
+      <h4 class="sub-judul" style="margin-top:4px">Anggaran &amp; jatuh tempo per kategori</h4>
+      <div id="setKatList"></div>
+      <div class="hint">Tanggal jatuh tempo membuat Beranda menandai tagihan yang belum dibayar bulan ini. Anggaran memunculkan bar progres di Beranda dan Laporan. Kosongkan bila tidak dipakai.</div>
+
+      <h4 class="sub-judul">Daftar meter</h4>
       <div id="setMeterList"></div>
       <button type="button" class="btn sekunder" id="setTambahMeter" style="margin-bottom:6px">+ Tambah meter</button>
       <div class="hint">Beri nama (mis. “Rumah”, “Kos”). Meter terdaftar bisa dipilih dari dropdown dan dilaporkan terpisah.</div>
@@ -875,7 +891,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
   // ╔══════════════════════════════════════════════════════════════╗
   // ║  TEMPEL DISINI  →  URL Web App Code.gs (berakhiran /exec)    ║
   // ╚══════════════════════════════════════════════════════════════╝
-  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbyibrBmnmQLHou5SS_Wpo4URld2Pczt84EtXRBXgtrAw_4oMnhzCEgfpcHtoSczQ6eNdw/exec';
+  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbyegWTgnp-xkLp-BEis_mwhujZ9Jeaqpm0mHNGWAelB8YCwQFrBPRdwqIecUlF9i-UwIw/exec';
 
   var BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   var HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
@@ -1119,6 +1135,23 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     renderAnggaran(); renderTren(); renderBanding(); renderKwh(); renderRingkasKat();
   }
 
+  function anggaranKat(k) { return k === 'pln' ? (SET.anggaran || 0) : ((SET.anggaranKat || {})[k] || 0); }
+  function ringkasTotal(d, k) { var r = (d.ringkas || []).filter(function (x) { return x.kat === k; })[0]; return r ? r.total : 0; }
+  /* status bayar per kategori: hanya kategori yang diberi tanggal jatuh tempo di Pengaturan */
+  function statusTagihan(d) {
+    var hari = Number(d.hariIni.slice(8, 10)), akhir = new Date(Date.UTC(d.tahun, d.bulan, 0)).getUTCDate(), jt = SET.jatuhTempo || {}, h = '';
+    (d.ringkas || []).forEach(function (x) {
+      var t = Math.min(Number(jt[x.kat]) || 0, akhir), cls = '', teks;
+      if (!t) return;
+      if (x.jumlah > 0) { cls = 'turun'; teks = '✓ Sudah dibayar'; }
+      else if (hari > t) { cls = 'naik'; teks = 'Terlambat ' + (hari - t) + ' hari (tempo tgl ' + t + ')'; }
+      else if (hari === t) { cls = 'warn'; teks = 'Jatuh tempo hari ini'; }
+      else { cls = (t - hari <= 3) ? 'warn' : ''; teks = 'Belum dibayar · tempo tgl ' + t + ' (' + (t - hari) + ' hari lagi)'; }
+      h += '<div class="stt"><span>' + (IKON_KAT[x.kat] || '') + ' ' + esc(x.label) + '</span><b class="' + cls + '">' + esc(teks) + '</b></div>';
+    });
+    return h;
+  }
+
   function renderRingkasKat() {
     var d = S.init, box = $('kartuRingkas');
     if (!d || !d.ringkas) { box.classList.add('hide'); return; }
@@ -1126,6 +1159,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     d.ringkas.forEach(function (x) { tot += x.total; if (x.total > maks) maks = x.total; });
     box.classList.remove('hide');
     $('ringkasJudul').textContent = 'Semua tagihan · ' + (d.bulanLabel || 'bulan ini');
+    $('ringkasStatus').innerHTML = statusTagihan(d);
     $('ringkasIsi').innerHTML = d.ringkas.map(function (x) {
       return '<button type="button" class="bln-row" data-kat="' + esc(x.kat) + '"><span class="nm">' + (IKON_KAT[x.kat] || '') + ' ' + esc(x.label) + '</span>' +
         '<span class="bar"><i style="width:' + Math.round(x.total / maks * 100) + '%"></i></span><b>' + esc(rp(x.total)) + '</b></button>';
@@ -1133,10 +1167,11 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
   }
 
   function renderAnggaran() {
-    var d = S.init, a = SET.anggaran, box = $('kartuAnggaran');
-    if (!d || !a || S.kat !== 'pln') { box.classList.add('hide'); return; }
+    var d = S.init, a = anggaranKat(S.kat), box = $('kartuAnggaran');
+    if (!d || !a) { box.classList.add('hide'); return; }
     box.classList.remove('hide');
-    var pakai = d.total || 0, pct = Math.round(pakai / a * 100);
+    $('angJudul').textContent = 'Anggaran ' + (S.kat === 'pln' ? '' : katInfo(S.kat).label + ' ') + 'bulan ini';
+    var pakai = S.kat === 'pln' ? (d.total || 0) : ringkasTotal(d, S.kat), pct = Math.round(pakai / a * 100);
     var kelas = pct >= 100 ? 'merah' : pct >= 75 ? 'kuning' : '';
     $('angBar').className = 'progres ' + kelas;
     $('angIsi').style.width = Math.min(100, pct) + '%';
@@ -2355,6 +2390,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     $('setBawaan').value = SET.noPlnBawaan || '';
     $('setAnggaran').value = SET.anggaran ? 'Rp ' + ribuan(SET.anggaran) : '';
     renderBarisMeter(SET.meter);
+    renderBarisKat();
     $('setPengOn').checked = !!SET.pengingat.aktif;
     $('setPengHari').value = String(SET.pengingat.hari || 3);
     $('setPengEmail').value = SET.pengingat.email || '';
@@ -2370,6 +2406,29 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
   $('setMeterList').addEventListener('input', function (e) { if (e.target.classList.contains('mNo')) e.target.value = digits(e.target.value); });
   $('setBawaan').addEventListener('input', function () { this.value = digits(this.value); });
   $('setAnggaran').addEventListener('input', function () { formatRupiahInput(this); });
+  function renderBarisKat() {
+    var ag = SET.anggaranKat || {}, jt = SET.jatuhTempo || {};
+    $('setKatList').innerHTML = S.kategori.map(function (x) {
+      var pln = x.kat === 'pln', lb = esc(x.label);
+      return '<div class="kat-row" data-kat-set="' + esc(x.kat) + '"><div class="kat-nama">' + (IKON_KAT[x.kat] || '') + ' ' + lb + '</div><div class="row2">' +
+        (pln ? '<div class="kecil" style="align-self:center">Anggaran PLN diisi di kolom “Anggaran bulanan” di atas.</div>'
+             : '<div><label>Anggaran / bulan</label><input class="agKat" aria-label="Anggaran ' + lb + '" inputmode="numeric" placeholder="Rp (opsional)" value="' + (ag[x.kat] ? 'Rp ' + ribuan(ag[x.kat]) : '') + '"></div>') +
+        '<div><label>Jatuh tempo (tgl)</label><input class="jtKat" aria-label="Tanggal jatuh tempo ' + lb + '" inputmode="numeric" maxlength="2" placeholder="1–31" value="' + (jt[x.kat] || '') + '"></div></div></div>';
+    }).join('');
+  }
+  $('setKatList').addEventListener('input', function (e) {
+    var t = e.target;
+    if (t.classList.contains('agKat')) formatRupiahInput(t); else if (t.classList.contains('jtKat')) t.value = digits(t.value).slice(0, 2);
+  });
+  function kumpulKat() {
+    var a = {}, t = {};
+    Array.prototype.forEach.call($('setKatList').querySelectorAll('[data-kat-set]'), function (r) {
+      var k = r.getAttribute('data-kat-set'), ag = r.querySelector('.agKat'), jt = r.querySelector('.jtKat');
+      if (ag && Number(digits(ag.value))) a[k] = Number(digits(ag.value));
+      if (jt && Number(digits(jt.value))) t[k] = Number(digits(jt.value));
+    });
+    return { a: a, t: t };
+  }
   function kumpulMeter(longgar) {
     var out = [];
     Array.prototype.forEach.call($('setMeterList').querySelectorAll('.meter-row'), function (r) {
@@ -2385,7 +2444,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     var preset = $('setPreset').value.split(/[\s,;]+/).map(function (s) { return Number(digits(s)); }).filter(function (n) { return n > 0; });
     var data = {
       preset: preset, noPlnBawaan: digits($('setBawaan').value), anggaran: Number(digits($('setAnggaran').value)) || 0,
-      meter: kumpulMeter(false),
+      meter: kumpulMeter(false), anggaranKat: kumpulKat().a, jatuhTempo: kumpulKat().t,
       pengingat: { aktif: $('setPengOn').checked, hari: Number(digits($('setPengHari').value)) || 3, email: $('setPengEmail').value.trim() }
     };
     btn.disabled = true; btn.classList.add('load'); $('setSimpanTeks').textContent = 'Menyimpan…';
@@ -2599,8 +2658,8 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
       var pertama = bulanRows.filter(function (b) { return b.rows.length; })[0];
       var akhirIdx = (y === S.tahunIni) ? S.bulanIniIdx : 11;
       h += '<span>Rata-rata / bulan: <b>' + esc(rp(tot / Math.max(1, akhirIdx - (pertama ? pertama.m0 : 0) + 1))) + '</b></span>';
-    } else if (plnL && SET.anggaran && !meter) {     // anggaran hanya untuk PLN
-      h += '<span>Anggaran: <b>' + esc(rp(SET.anggaran)) + '</b> (' + Math.round(tot / SET.anggaran * 100) + '% terpakai)</span>';
+    } else if (anggaranKat(S.kat) && !meter) {     // anggaran hanya untuk PLN
+      h += '<span>Anggaran: <b>' + esc(rp(anggaranKat(S.kat))) + '</b> (' + Math.round(tot / anggaranKat(S.kat) * 100) + '% terpakai)</span>';
     }
     var rk = semua.filter(function (x) { return x.kwh; });
     if (rk.length) h += '<span>Harga rata-rata: <b>' + esc(rp(jumlahRp(rk) / jumlahKwh(rk))) + '/kWh</b></span>';
@@ -2639,6 +2698,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
       if (token !== S.reqLap) return;
       for (k = a; k <= b; k++) bulanRows.push({ m0: k % 12, rows: rowsBulan(k, meter) || [] });
       doc.innerHTML = bangunLaporan(jenis, y, m0, bulanRows, meter);
+      S.csvRows = [].concat.apply([], bulanRows.map(function (b) { return b.rows; })).sort(function (p, q) { return (p.tglIso || '').localeCompare(q.tglIso || '') || p.row - q.row; });
       S.judulLaporan = 'Laporan ' + katInfo(S.kat).label + ' ' + (jenis === 'bulan' ? BULAN[m0] + ' ' + y : y) + (meter ? ' - ' + (namaMeter(meter) || meter) : '');
     } catch (e) { if (token === S.reqLap) doc.innerHTML = '<div class="pesan err">❌ ' + esc(e.message) + '</div>'; }
   }
@@ -2650,6 +2710,31 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     document.title = S.judulLaporan || 'Laporan PLN';
     window.addEventListener('afterprint', function pulih() { document.title = asal; window.removeEventListener('afterprint', pulih); });
     window.print();
+  };
+
+  /* unduh CSV: ; sebagai pemisah + BOM agar terbuka rapi di Excel (pengaturan Indonesia) */
+  function csvSel(v, angka) {
+    v = String(v == null ? '' : v);
+    if (angka) return v;
+    if (/^\d+$/.test(v)) return '="' + v + '"';          // angka nol di depan (No. HP) tidak hilang di Excel
+    if (/^[=+\-@\t\r]/.test(v)) v = "'" + v;              // cegah rumus tertanam dari teks
+    return /[;"\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  }
+  $('lpCsv').onclick = function () {
+    var rows = S.csvRows || [];
+    if (!rows.length) { toast('Tidak ada data untuk diunduh.', 'err'); return; }
+    var KI = katInfo(S.kat), pln = S.kat === 'pln', kd = function (n) { return n ? String(n).replace('.', ',') : ''; };
+    var baris = [['Tanggal', 'Kategori', pln ? 'No. PLN' : KI.idLabel, 'Nama meter', 'Nominal (Rp)', 'kWh', 'Saldo meter (kWh)']];
+    rows.forEach(function (x) {
+      baris.push([csvSel(x.tgl), csvSel(KI.label), csvSel(x.noPln), csvSel(pln ? namaMeter(x.noPln) : ''), csvSel(x.nominal, true), csvSel(kd(x.kwh), true), csvSel(kd(x.saldo), true)]);
+    });
+    baris.push(['Total', '', '', '', jumlahRp(rows), '', '']);
+    var blob = new Blob(['\uFEFF' + baris.map(function (r) { return r.join(';'); }).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a'), u = URL.createObjectURL(blob);
+    a.href = u; a.download = (S.judulLaporan || 'laporan').replace(/[^\w\- ]+/g, '') + '.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(u); }, 1500);
+    toast('CSV diunduh (' + rows.length + ' transaksi).', 'ok');
   };
 
   terapkanTema();
