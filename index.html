@@ -1946,10 +1946,10 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
   var Login = (function () {
     var MIN = 4, MAX = 12, HINT = MIN + '–' + MAX + ' angka';
     var el = $('login'), isi = $('lgIn'), dots = $('lgDots'), msg = $('lgMsg'), go = $('lgGo'), pg = $('lgPg'), lihat = $('lgLihat'), del = $('lgHapus');
-    var buf = '', sibuk = false, tahan = false;
+    var buf = '', sibuk = false, tahan = false, info = '';   // info: catatan netral (mis. sesi berakhir), hilang saat angka pertama diketik
 
     function ketuk(n, k, ms) { n.classList.remove(k); void n.offsetWidth; n.classList.add(k); setTimeout(function () { n.classList.remove(k); }, ms || 600); }
-    function pesan(t) { msg.textContent = t || HINT; msg.className = 'lg-msg' + (t ? ' err' : ''); }
+    function pesan(t) { msg.textContent = t || info || HINT; msg.className = 'lg-msg' + (t ? ' err' : ''); }
     function gambar(baru) {
       var n = buf.length, tot = Math.max(MIN, n), h = '';
       for (var k = 0; k < tot; k++) h += k < n ? '<i class="on' + (baru && k === n - 1 ? ' baru' : '') + '" data-d="' + buf.charAt(k) + '"></i>' : '<i></i>';
@@ -1962,7 +1962,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     function tambah(d) {
       if (sibuk) return;
       if (buf.length >= MAX) { ketuk(dots, 'penuh', 300); return; }
-      buf += d; pesan(''); gambar(true);
+      buf += d; info = ''; pesan(''); gambar(true);
     }
     function hapus() { if (sibuk || !buf) return; buf = buf.slice(0, -1); pesan(''); gambar(); }
     function gagal(m) {
@@ -1978,7 +1978,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
       el.classList.add('selesai');
       setTimeout(function () {
         el.classList.remove('tampil', 'selesai', 'ok', 'cek', 'salah');
-        buf = ''; sibuk = false; $('lgGoTeks').textContent = 'Masuk'; gambar();
+        info = ''; buf = ''; sibuk = false; $('lgGoTeks').textContent = 'Masuk'; gambar();
       }, 600);
     }
     async function kirim() {
@@ -2016,6 +2016,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
 
     return {
       tutup: tutup,
+      catatan: function (t) { info = t || ''; },
       tampil: function (m) {
         if (m) { PIN = ''; try { sessionStorage.removeItem('pln_pin'); } catch (x) {} }
         document.documentElement.classList.add('kunci');   // dashboard di belakang disembunyikan & scroll halaman dikunci
@@ -2030,6 +2031,37 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     try { sessionStorage.removeItem('pln_pin'); } catch (x) {}
     location.reload();
   });
+  /* ---------- logout otomatis: tanpa aktivitas selama IDLE_MENIT menit ---------- */
+  var IDLE_MENIT = 10;                       // ubah angka ini bila ingin batas waktu lain
+  var IDLE_MS = IDLE_MENIT * 60 * 1000, PERINGATAN_MS = 30000;
+  var idleAktif = false, aktifTerakhir = Date.now(), sudahPeringatan = false;
+  function catatAktif() { aktifTerakhir = Date.now(); sudahPeringatan = false; }
+  ['pointerdown', 'pointermove', 'keydown', 'touchstart', 'wheel', 'scroll', 'input'].forEach(function (ev) {
+    window.addEventListener(ev, catatAktif, { passive: true, capture: true });
+  });
+  function keluarOtomatis() {
+    try { sessionStorage.removeItem('pln_pin'); sessionStorage.setItem('pln_idle', '1'); } catch (x) {}
+    location.reload();                       // sama seperti tombol Keluar: semua data di layar ikut terhapus
+  }
+  function cekIdle() {
+    if (!idleAktif || !PIN) return;          // hanya bila aplikasi memakai PIN dan sedang dalam keadaan masuk
+    if (S.sending) { catatAktif(); return; } // jangan memutus saat nota sedang diunggah
+    var diam = Date.now() - aktifTerakhir;
+    if (diam >= IDLE_MS) { keluarOtomatis(); return; }
+    if (diam >= IDLE_MS - PERINGATAN_MS && !sudahPeringatan) {
+      sudahPeringatan = true;
+      toast('Tidak ada aktivitas. Keluar otomatis dalam 30 detik; sentuh layar untuk tetap masuk.', 'err');
+    }
+  }
+  setInterval(cekIdle, 10000);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') cekIdle(); });   // HP baru dibuka setelah lama terkunci
+  try {
+    if (sessionStorage.getItem('pln_idle') === '1') {
+      sessionStorage.removeItem('pln_idle');
+      Login.catatan('Sesi berakhir karena tidak ada aktivitas ' + IDLE_MENIT + ' menit. Masukkan PIN lagi.');
+    }
+  } catch (x) {}
+
   // Ingat bahwa PIN dipakai, supaya layar login langsung tampil saat aplikasi dibuka (tanpa kilasan isi aplikasi).
   try { if (!PIN && localStorage.getItem('pln_perlu_pin') === '1') Login.tampil(''); } catch (x) {}
 
@@ -2051,6 +2083,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
       var s = await run('statusAwal');
       try { localStorage.setItem('pln_perlu_pin', s.perluPin ? '1' : '0'); } catch (x) {}
       $('btnKeluar').classList.toggle('hide', !s.perluPin);
+      idleAktif = !!s.perluPin; catatAktif();
       if (s.perluPin && !PIN) { tampilPin(''); return; }
       await muatAwal();
     } catch (e) {
