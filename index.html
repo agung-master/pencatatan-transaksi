@@ -900,7 +900,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
   // ╔══════════════════════════════════════════════════════════════╗
   // ║  TEMPEL DISINI  →  URL Web App Code.gs (berakhiran /exec)    ║
   // ╚══════════════════════════════════════════════════════════════╝
-  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbwlqzqvm1BvemeNpSHYy0CKj4ipGMvwYA8GvRak47wCMSNdIUfd42YkyzAggEriK3sQGg/exec';
+  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbwt0lRFvTYzlvMv7QNGevx5v63XM51GTc0btlvpVRyMvOYOVPU8ZYCS4tQVsg_lQM_nEA/exec';
 
   var BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   var HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
@@ -2180,23 +2180,26 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
   /* ---------- login PIN (4–12 angka; PIN diatur lewat menu Spreadsheet: Catat Token › Atur PIN) ---------- */
   var Login = (function () {
     var MIN = 4, MAX = 12, HINT = MIN + '–' + MAX + ' angka';
+    var LEN = 0;   // jumlah angka PIN yang sebenarnya (dari server); 0 = belum diketahui -> bulatan dimulai dari MIN lalu bertambah
+    try { var l0 = Number(localStorage.getItem('pln_pin_len')) || 0; if (l0 >= MIN && l0 <= MAX) { LEN = l0; HINT = LEN + ' angka'; } } catch (x) {}   // diingat agar bulatan langsung pas saat layar login tampil
     var el = $('login'), isi = $('lgIn'), dots = $('lgDots'), msg = $('lgMsg'), go = $('lgGo'), pg = $('lgPg'), lihat = $('lgLihat'), del = $('lgHapus');
     var buf = '', sibuk = false, tahan = false, info = '';   // info: catatan netral (mis. sesi berakhir), hilang saat angka pertama diketik
 
     function ketuk(n, k, ms) { n.classList.remove(k); void n.offsetWidth; n.classList.add(k); setTimeout(function () { n.classList.remove(k); }, ms || 600); }
     function pesan(t) { msg.textContent = t || info || HINT; msg.className = 'lg-msg' + (t ? ' err' : ''); }
     function gambar(baru) {
-      var n = buf.length, tot = Math.max(MIN, n), h = '';
+      var n = buf.length, tot = LEN || Math.max(MIN, n), h = '';
       for (var k = 0; k < tot; k++) h += k < n ? '<i class="on' + (baru && k === n - 1 ? ' baru' : '') + '" data-d="' + buf.charAt(k) + '"></i>' : '<i></i>';
       dots.innerHTML = h;
       dots.setAttribute('aria-label', n ? n + ' angka dimasukkan' : 'Belum ada angka');
-      pg.style.strokeDashoffset = 100 - n / MAX * 100; pg.style.opacity = n ? '1' : '0';
-      el.style.setProperty('--c', n / MAX);
-      go.disabled = sibuk || n < MIN; del.disabled = sibuk || !n;
+      var cap = LEN || MAX;
+      pg.style.strokeDashoffset = 100 - n / cap * 100; pg.style.opacity = n ? '1' : '0';
+      el.style.setProperty('--c', n / cap);
+      go.disabled = sibuk || n < (LEN || MIN); del.disabled = sibuk || !n;
     }
     function tambah(d) {
       if (sibuk) return;
-      if (buf.length >= MAX) { ketuk(dots, 'penuh', 300); return; }
+      if (buf.length >= (LEN || MAX)) { ketuk(dots, 'penuh', 300); return; }
       buf += d; info = ''; pesan(''); gambar(true);
     }
     function hapus() { if (sibuk || !buf) return; buf = buf.slice(0, -1); pesan(''); gambar(); }
@@ -2217,7 +2220,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
       }, 600);
     }
     async function kirim() {
-      if (sibuk || buf.length < MIN) return;
+      if (sibuk || buf.length < (LEN || MIN)) return;
       sibuk = true; go.disabled = true; el.classList.add('cek'); $('lgGoTeks').textContent = 'Memuat…';
       try {
         PIN = buf; tahan = true;             // PIN diperiksa server lewat getInit: tidak ada permintaan cekPin terpisah lagi
@@ -2253,6 +2256,15 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     return {
       tutup: tutup,
       catatan: function (t) { info = t || ''; },
+      // n = jumlah angka PIN dari server (0/kosong = belum diketahui)
+      panjang: function (n) {
+        n = Number(n) || 0;
+        LEN = (n >= MIN && n <= MAX) ? n : 0;
+        HINT = LEN ? LEN + ' angka' : MIN + '–' + MAX + ' angka';
+        try { if (LEN) localStorage.setItem('pln_pin_len', String(LEN)); else localStorage.removeItem('pln_pin_len'); } catch (x) {}
+        if (LEN && buf.length > LEN) buf = buf.slice(0, LEN);
+        if (el.classList.contains('tampil')) { gambar(); if (!msg.classList.contains('err')) pesan(''); }
+      },
       tampil: function (m) {
         if (m) { PIN = ''; try { sessionStorage.removeItem('pln_pin'); } catch (x) {} }
         document.documentElement.classList.add('kunci');   // dashboard di belakang disembunyikan & scroll halaman dikunci
@@ -2320,6 +2332,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
       try { localStorage.setItem('pln_perlu_pin', s.perluPin ? '1' : '0'); } catch (x) {}
       $('btnKeluar').classList.toggle('hide', !s.perluPin);
       idleAktif = !!s.perluPin; catatAktif();
+      Login.panjang(s.perluPin ? s.pinPanjang : 0);   // bulatan di layar login = jumlah angka PIN
       if (s.perluPin && !PIN) { tampilPin(''); return; }
       await muatAwal();
     } catch (e) {
