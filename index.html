@@ -510,6 +510,22 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
 .doc svg,.doc i{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .doc .rapat th,.doc .rapat td{padding:4px 5px;font-size:11.5px}
 .meter-row.terkunci input{background:var(--chip);opacity:.85}
+
+/* ================= v8: pengurutan (sort) ================= */
+.sortbar{display:flex;align-items:center;gap:8px;margin:2px 0 10px;flex-wrap:nowrap}
+.sortbar .sb-lab{flex:none;font-size:12px;font-weight:700;color:var(--abu);white-space:nowrap}
+.sortbar select{flex:1;min-width:0;width:auto;padding:8px 10px;font-size:14px;font-weight:600;border-radius:10px}
+.sortbar .sb-arah{flex:none;display:inline-flex;align-items:center;gap:5px;border:0;background:var(--biru-muda);color:var(--biru);font-weight:700;font-size:13px;
+  padding:9px 12px;border-radius:10px;cursor:pointer;white-space:nowrap}
+.sortbar .sb-arah b{font-size:15px;line-height:1}
+.sortbar .sb-reset{flex:none;border:0;background:var(--chip);color:var(--abu);width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:16px;line-height:1;padding:0}
+@media (max-width:420px){.sortbar{flex-wrap:wrap}.sortbar .sb-lab{flex-basis:100%}.sortbar select{flex:1 1 140px}}
+.sortbar.bersih{margin:6px 0 8px}
+.sort-ket{font-size:12px;color:var(--abu);margin:-4px 0 8px}
+.lp-sort{display:grid;grid-template-columns:1fr;gap:2px;margin-top:4px}
+.lp-sort:empty{display:none}
+.lp-sort .sort-judul{font-size:12.5px;font-weight:700;margin:6px 0 4px}
+@media print{.sortbar,.sort-ket{display:none!important}}
 </style>
 </head>
 <body>
@@ -719,7 +735,8 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
         <div class="f"><label for="lpPeriode">Periode</label><select id="lpPeriode"></select></div>
       </div>
       <div class="f hide" id="wrapLpMeter"><label for="lpMeter">Meter</label><select id="lpMeter"></select></div>
-      <div class="lp-aksi"><button type="button" class="btn" id="lpCetak">Cetak / Simpan PDF</button><button type="button" class="btn sekunder" id="lpCsv">Unduh CSV (Excel)</button></div>
+      <div class="lp-sort" id="lpSort"></div>
+      <div class="lp-aksi" style="margin-top:12px"><button type="button" class="btn" id="lpCetak">Cetak / Simpan PDF</button><button type="button" class="btn sekunder" id="lpCsv">Unduh CSV (Excel)</button></div>
       <div class="hint">Di jendela cetak, pilih “Simpan sebagai PDF” sebagai printer.</div>
     </div>
     <div class="doc" id="laporanDoc"><div class="kosong">Memuat…</div></div>
@@ -900,7 +917,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
   // ╔══════════════════════════════════════════════════════════════╗
   // ║  TEMPEL DISINI  →  URL Web App Code.gs (berakhiran /exec)    ║
   // ╚══════════════════════════════════════════════════════════════╝
-  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbwt0lRFvTYzlvMv7QNGevx5v63XM51GTc0btlvpVRyMvOYOVPU8ZYCS4tQVsg_lQM_nEA/exec';
+  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbwjJJvFZJf7dTGFTvCgwH06UnLEF1WuWyCq7PuOarfRpNvGx0x-7BlZ9lAwjkGYslXJ6Q/exec';
 
   var BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   var HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
@@ -1062,6 +1079,123 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
   }
   function invalidasi() { S.cache = {}; S.anal = null; S.reqAnal++; }   // reqAnal++: hasil analisis yang masih di jalan dibuang
 
+  /* ---------- pengurutan (sort): satu mesin untuk semua daftar ----------
+     Setiap daftar punya "kunci" sendiri (SORT_DEF), pilihan urutan terakhir diingat di perangkat ini (localStorage "pln_sort").
+     Nilai kosong (mis. kWh yang tidak dicatat) selalu di bagian akhir, apa pun arahnya. Nilai sama -> urut tanggal, lalu nomor baris. */
+  var SORT_DEF = {
+    beranda: { f: 'tgl', a: false },        // Beranda: transaksi bulan ini
+    riwayat: { f: 'tgl', a: false },        // Riwayat › Bulan
+    cari: { f: 'tgl', a: false },           // Riwayat › Cari
+    tahun: { f: 'urut', a: false },         // Riwayat › Tahun: daftar bulan
+    tahunMeter: { f: 'total', a: false },   // Riwayat › Tahun: per meter
+    detailTotal: { f: 'tgl', a: true },     // Rincian "Total bulan ini" (kronologis agar Σ berjalan masuk akal)
+    detailTx: { f: 'tgl', a: false },       // Rincian "Transaksi bulan ini"
+    detailGrup: { f: 'total', a: false },   // Rincian: per meter / per ID
+    laporan: { f: 'tgl', a: true },         // Laporan: tabel transaksi + CSV
+    lapRekap: { f: 'urut', a: true }        // Laporan: rekap per bulan / kategori / meter
+  };
+  var SORT_ST = {};
+  try { SORT_ST = JSON.parse(localStorage.getItem('pln_sort') || '{}') || {}; } catch (e) { SORT_ST = {}; }
+  function sortSimpan() { try { localStorage.setItem('pln_sort', JSON.stringify(SORT_ST)); } catch (e) { /* abaikan */ } }
+  function sortSt(key, opsi) {
+    var d = SORT_DEF[key], s = SORT_ST[key];
+    if (s && typeof s.f === 'string' && (!opsi || opsi.some(function (o) { return o[0] === s.f; }))) return { f: s.f, a: !!s.a };
+    return { f: d.f, a: d.a };   // belum diatur, atau pilihannya tidak tersedia di kategori ini (mis. kWh di PDAM)
+  }
+  var OPSI_TAHUN = [['urut', 'Bulan', 'Jan → Des', 'Des → Jan'], ['total', 'Total pengeluaran'], ['jml', 'Jumlah transaksi'], ['rata', 'Rata-rata / transaksi']];
+  var OPSI_REKAP = [['urut', 'Urutan bawaan (bulan / kategori)', 'Awal → akhir', 'Akhir → awal'], ['total', 'Total'], ['jml', 'Jumlah transaksi'], ['nama', 'Nama (A–Z)']];
+  function opsiTx(kat) {
+    var pln = kat === 'pln', o = [['tgl', 'Tanggal'], ['nominal', 'Nominal'], ['no', 'No. urut', 'Kecil → besar', 'Besar → kecil'],
+      ['id', pln ? 'Meter / No. PLN' : (kat === 'gab' ? 'No. PLN / ID pelanggan' : katInfo(kat).idLabel)]];
+    if (kat === 'gab') o.push(['kat', 'Kategori']);
+    if (pln) o.push(['kwh', 'kWh dibeli'], ['harga', 'Harga per kWh'], ['saldo', 'Saldo meter (kWh)']);
+    return o;
+  }
+  function opsiMeter(kat) {
+    var o = [['total', 'Total pengeluaran'], ['jml', 'Jumlah transaksi'], ['rata', 'Rata-rata / transaksi'], ['nama', kat === 'pln' ? 'Nama meter' : katInfo(kat).idLabel]];
+    if (kat === 'pln') o.push(['kwh', 'kWh dibeli']);
+    return o;
+  }
+  function nilaiTx(x, f) {
+    switch (f) {
+      case 'tgl': return x.tglIso || null;
+      case 'nominal': return x.nominal || 0;
+      case 'no': { var n = Number(x.no); return (String(x.no == null ? '' : x.no).trim() !== '' && isFinite(n)) ? n : null; }
+      case 'id': { var s = ((x.kat || S.kat) === 'pln' ? (namaMeter(x.noPln) || digits(x.noPln)) : String(x.noPln || '')).trim().toLowerCase(); return s || null; }
+      case 'kat': return String(katInfo(x.kat || S.kat).label).toLowerCase();
+      case 'kwh': return x.kwh || null;
+      case 'saldo': return x.saldo || null;
+      case 'harga': return x.kwh ? x.nominal / x.kwh : null;
+    }
+    return null;
+  }
+  function tieTx(a, b) {   // nilai sama: tanggal -> bulan -> nomor baris di spreadsheet
+    var ta = a.tglIso || '', tb = b.tglIso || '';
+    if (ta !== tb) return ta < tb ? -1 : 1;
+    var ka = (a.y || 0) * 12 + (a.m || 0), kb = (b.y || 0) * 12 + (b.m || 0);
+    return ka !== kb ? ka - kb : (a.row || 0) - (b.row || 0);
+  }
+  function bandingNilai(p, q) {
+    if (typeof p === 'string' || typeof q === 'string') return String(p).localeCompare(String(q), 'id', { numeric: true, sensitivity: 'base' });
+    return p < q ? -1 : p > q ? 1 : 0;
+  }
+  function urutkan(list, f, asc, nilai, tie) {
+    var arah = asc ? 1 : -1;
+    return list.map(function (x, i) { return { x: x, i: i, v: nilai(x, f) }; }).sort(function (A, B) {
+      var an = A.v === null || A.v === undefined, bn = B.v === null || B.v === undefined;
+      if (an !== bn) return an ? 1 : -1;                       // kosong selalu di akhir
+      var c = an ? 0 : bandingNilai(A.v, B.v);
+      if (c) return c * arah;
+      if (tie) { c = tie(A.x, B.x); if (c) return c * arah; }
+      return A.i - B.i;
+    }).map(function (o) { return o.x; });
+  }
+  function sortRows(rows, key, opsi) { var st = sortSt(key, opsi); return urutkan(rows, st.f, st.a, nilaiTx, tieTx); }
+  /* daftar ringkasan (bulan, meter, kategori): get(o, f) -> nilai urut; urutan awal daftar dipertahankan bila nilainya sama */
+  function sortAgg(list, key, opsi, get) { var st = sortSt(key, opsi); return urutkan(list, st.f, st.a, get, null); }
+  function arahLabel(o, asc) {
+    if (o[2]) return asc ? o[2] : o[3];
+    var f = o[0];
+    if (f === 'tgl') return asc ? 'Terlama' : 'Terbaru';
+    if (f === 'id' || f === 'kat' || f === 'nama') return asc ? 'A → Z' : 'Z → A';
+    if (f === 'urut') return asc ? 'Awal → akhir' : 'Akhir → awal';
+    return asc ? 'Terkecil' : 'Terbesar';
+  }
+  function arahAwal(f, key) {   // arah yang paling wajar saat pilihan urutan diganti
+    if (f === 'urut') return SORT_DEF[key].f === 'urut' ? SORT_DEF[key].a : true;
+    return (f === 'id' || f === 'kat' || f === 'nama' || f === 'no');
+  }
+  function sortBarHtml(key, opsi) {
+    var st = sortSt(key, opsi), d = SORT_DEF[key], o = opsi[0], i;
+    for (i = 0; i < opsi.length; i++) if (opsi[i][0] === st.f) o = opsi[i];
+    var lab = arahLabel(o, st.a), h = '<div class="sortbar" data-sortkey="' + key + '"><span class="sb-lab">Urutkan</span>' +
+      '<select class="sb-sel" aria-label="Urutkan berdasarkan">';
+    opsi.forEach(function (p) { h += '<option value="' + esc(p[0]) + '"' + (p[0] === st.f ? ' selected' : '') + '>' + esc(p[1]) + '</option>'; });
+    h += '</select><button type="button" class="sb-arah" aria-label="Balik arah urutan (sekarang: ' + esc(lab) + ')"><b>' + (st.a ? '↑' : '↓') + '</b>' + esc(lab) + '</button>';
+    if (st.f !== d.f || st.a !== d.a) h += '<button type="button" class="sb-reset" aria-label="Kembali ke urutan awal" title="Urutan awal">↺</button>';
+    return h + '</div>';
+  }
+  var SORT_RENDER = {};   // key -> fungsi yang menggambar ulang daftarnya (diisi di tiap bagian di bawah)
+  function sortGambar(key) { var fn = SORT_RENDER[key]; if (fn) { try { fn(); } catch (e) { /* daftar tetap tampil apa adanya */ } } }
+  function sortUbah(key, f, a) {
+    if (f === null) delete SORT_ST[key]; else SORT_ST[key] = { f: f, a: a };
+    sortSimpan(); sortGambar(key);
+  }
+  document.addEventListener('change', function (e) {
+    var t = e.target, bar = t && t.classList && t.classList.contains('sb-sel') && t.closest ? t.closest('.sortbar') : null;
+    if (!bar) return;
+    var key = bar.getAttribute('data-sortkey');
+    sortUbah(key, t.value, arahAwal(t.value, key));
+  });
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('.sb-arah, .sb-reset') : null;
+    if (!b) return;
+    var bar = b.closest('.sortbar'), key = bar.getAttribute('data-sortkey');
+    if (b.classList.contains('sb-reset')) { sortUbah(key, null); return; }
+    var sel = bar.querySelector('.sb-sel'), st = sortSt(key, Array.prototype.map.call(sel.options, function (o) { return [o.value]; }));
+    sortUbah(key, st.f, !st.a);
+  });
+
   /* ---------- data banyak bulan (cache di memori) ---------- */
   async function ambilData(a, b, force) {
     var kat = S.kat, ca = (S._ca[kat] = S._ca[kat] || {}), ada = {}, perlu = [], k;
@@ -1138,12 +1272,21 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     $('sTotal').textContent = total === null ? '…' : rp(total);
     $('sJumlah').textContent = jumlah === null ? '…' : jumlah + ' transaksi';
     $('sAll').textContent = semua === null ? '–' : rp(semua);
-    $('terbaruIsi').innerHTML = terbaru === null ? '<div class="kosong">Memuat…</div>' :
-      (terbaru.length ? terbaru.map(function (x) { return itemHtml(x, false); }).join('') :
+    // Urutan memakai SEMUA transaksi bulan ini bila sudah dimuat (bukan hanya 5 terakhir), lalu 5 teratas ditampilkan.
+    var daftarB = terbaru;
+    if (terbaru !== null && S.cache[k]) daftarB = rowsBulan(k, meter) || terbaru;
+    var stB = sortSt('beranda', opsiTx(S.kat)), bawaanB = stB.f === 'tgl' && !stB.a;
+    $('terbaruJudul').textContent = (bawaanB ? 'Terbaru' : 'Transaksi') + ' · ' + (d.bulanLabel || '');
+    var urutB = daftarB === null ? null : sortRows(daftarB, 'beranda', opsiTx(S.kat)), BER_MAKS = 5;
+    $('terbaruIsi').innerHTML = urutB === null ? '<div class="kosong">Memuat…</div>' :
+      (urutB.length ? (urutB.length > 1 ? sortBarHtml('beranda', opsiTx(S.kat)) : '') +
+         urutB.slice(0, BER_MAKS).map(function (x) { return itemHtml(x, false); }).join('') +
+         (urutB.length > BER_MAKS ? '<div class="kecil" style="margin-top:8px">Menampilkan ' + BER_MAKS + ' dari ' + urutB.length + ' transaksi. Ketuk “Lihat semua” untuk daftar lengkap.</div>' : '') :
        '<div class="kosong">Belum ada transaksi ' + (pln ? '' : esc(KI.label) + ' ') + 'di ' + esc(d.bulanLabel || 'bulan ini') + '.</div>');
     renderAnggaran(); renderTren(); renderBanding(); renderKwh(); renderRingkasKat();
   }
 
+  SORT_RENDER.beranda = function () { renderBeranda(); };
   function anggaranKat(k) { return k === 'pln' ? (SET.anggaran || 0) : ((SET.anggaranKat || {})[k] || 0); }
   function ringkasTotal(d, k) { var r = (d.ringkas || []).filter(function (x) { return x.kat === k; })[0]; return r ? r.total : 0; }
   /* status bayar per kategori: hanya kategori yang diberi tanggal jatuh tempo di Pengaturan */
@@ -1341,6 +1484,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
   }
   function renderDetail(r, pr, kat) {
     var KI = katInfo(kat), pln = kat === 'pln', meter = mBer(), d = S.init, box = $('detIsi');
+    DET.r = r; DET.pr = pr; DET.kat = kat;   // disimpan agar daftar bisa digambar ulang saat urutan diganti
     var ambil = function (q) { return ((q && q.rows) || []).filter(function (x) { return (x.nominal || x.tgl) && cocokMeter(x, meter); }); };
     var rows = ambil(r), prow = ambil(pr), n = rows.length, total = jumlahRp(rows), h = '';
     if (!n) {
@@ -1363,9 +1507,13 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
       if (!g[key]) { g[key] = { lab: pln ? labelMeter(x.noPln) : (x.noPln || '–'), n: 0, t: 0 }; gk.push(key); }
       g[key].n++; g[key].t += x.nominal || 0;
     });
-    var grup = gk.length < 2 ? '' : '<h4 class="det-h">' + (pln ? 'Per meter' : 'Per ' + esc(KI.idLabel)) + '</h4><div class="det-list">' +
-      gk.map(function (key) {
-        var o = g[key];
+    var opsiG = opsiMeter(kat).filter(function (o) { return o[0] !== 'kwh'; });
+    var gUrut = sortAgg(gk.map(function (key, i) { return { key: key, o: g[key], i: i }; }), 'detailGrup', opsiG, function (z, f) {
+      return f === 'total' ? z.o.t : f === 'jml' ? z.o.n : f === 'rata' ? z.o.t / z.o.n : f === 'nama' ? String(z.o.lab).toLowerCase() : z.i;
+    });
+    var grup = gk.length < 2 ? '' : '<h4 class="det-h">' + (pln ? 'Per meter' : 'Per ' + esc(KI.idLabel)) + '</h4>' + sortBarHtml('detailGrup', opsiG) + '<div class="det-list">' +
+      gUrut.map(function (z) {
+        var o = z.o;
         return '<div class="det-tx"><div class="isi"><b>' + esc(o.lab) + '</b><small>' + o.n + ' transaksi</small></div>' +
           '<div class="kn"><b>' + esc(rp(o.t)) + '</b><small>' + Math.round(o.t / total * 100) + '%</small></div></div>';
       }).join('') + '</div>';
@@ -1401,19 +1549,20 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
           return '<div class="bln-row"><span class="nm">' + (IKON_KAT[x.kat] || '') + ' ' + esc(x.label) + '</span><span class="bar"><i style="width:' + p + '%"></i></span><b>' + p + '%</b></div>';
         }).join('') + '<div class="kecil" style="margin-top:6px">Total semua kategori ' + esc(rp(all)) + '</div>';
       }
-      var cum = 0;
+      var cum = 0, cumMap = {};
+      urut.forEach(function (x) { cum += x.nominal || 0; cumMap[x.row] = cum; });   // Σ selalu dihitung menurut urutan tanggal, apa pun urutan tampilan
+      var opsiT = opsiTx(kat), tampilT = sortRows(urut, 'detailTotal', opsiT);
       h = '<div class="det-besar">' + esc(rp(total)) + '</div>' + kal + '<div class="det-grid">' + tiles + '</div>' + grup + porsi +
-        '<h4 class="det-h">Terdiri dari ' + n + ' transaksi</h4><div class="det-list">' + urut.map(function (x) {
-          cum += x.nominal || 0;
+        '<h4 class="det-h">Terdiri dari ' + n + ' transaksi</h4>' + (n > 1 ? sortBarHtml('detailTotal', opsiT) : '') + '<div class="det-list">' + tampilT.map(function (x) {
           var ket = tglPanjang(x.tglIso) || x.tgl;
           if (pln && x.kwh) ket += ' · ' + fmtKwh(x.kwh) + ' kWh';
           return '<div class="det-tx"><div class="tg">' + tglKotak(x) + '</div><div class="isi"><b>' + esc(pln ? labelMeter(x.noPln) : (x.noPln || KI.label)) + '</b><small>' + esc(ket) + '</small></div>' +
-            '<div class="kn"><b>' + esc(rp(x.nominal)) + '</b><small>Σ ' + esc(rp(cum)) + '</small></div></div>';
+            '<div class="kn"><b>' + esc(rp(x.nominal)) + '</b><small>Σ ' + esc(rp(cumMap[x.row])) + '</small></div></div>';
         }).join('') + '</div><div class="totalbar"><span>Total ' + esc(r.label) + '</span><span>' + esc(rp(total)) + '</span></div>';
       if (pln && !meter && r.totalAll !== null && r.totalAll !== undefined) {
         h += '<div class="totalbar all2"><span>Total keseluruhan</span><span>' + esc(rp(r.totalAll)) + '</span></div>';
       }
-      h += '<div class="kecil" style="margin-top:8px">Angka Σ menunjukkan bagaimana total terbentuk; baris terakhir sama dengan total bulan ini.</div>';
+      h += '<div class="kecil" style="margin-top:8px">Angka Σ adalah total berjalan menurut urutan tanggal (bukan urutan tampilan); transaksi terakhir secara tanggal sama dengan total bulan ini.</div>';
     } else {
       var kat2 = '';
       if (rg) {
@@ -1424,11 +1573,19 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
         '<div class="det-grid">' + tile('Transaksi pertama', esc(tglSingkat(urut[0])), esc(rp(urut[0].nominal))) +
         tile('Transaksi terakhir', esc(tglSingkat(urut[n - 1])), esc(rp(urut[n - 1].nominal))) +
         tile('Total', esc(rp(total))) + tile('Rata-rata / transaksi', esc(rp(total / n))) + '</div>' + kat2 + grup +
-        '<h4 class="det-h">Semua transaksi (terbaru di atas)</h4>' + urut.slice().reverse().map(function (x) { return itemHtml(x, false); }).join('') +
+        '<h4 class="det-h">Semua transaksi</h4>' + (n > 1 ? sortBarHtml('detailTx', opsiTx(kat)) : '') +
+        sortRows(urut, 'detailTx', opsiTx(kat)).map(function (x) { return itemHtml(x, false); }).join('') +
         '<button type="button" class="btn sekunder" id="detKeRw" data-go="riwayat" style="margin-top:14px">Buka di Riwayat untuk ubah / hapus</button>';
     }
     box.innerHTML = h;
   }
+  function gambarUlangDetail() {
+    if (!DET.r || !$('detBox').classList.contains('tampil')) return;
+    var sc = $('detIsi').scrollTop;
+    renderDetail(DET.r, DET.pr, DET.kat);
+    $('detIsi').scrollTop = sc;
+  }
+  SORT_RENDER.detailTotal = SORT_RENDER.detailTx = SORT_RENDER.detailGrup = gambarUlangDetail;
   function tutupDetail() {
     $('detBox').classList.remove('tampil'); DET.req++;
     var p = DET.pemicu; DET.pemicu = null;
@@ -1969,13 +2126,17 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     }
     var total = jumlahRp(rows);
     tampilRingkas('Total ' + (meter ? namaMeter(meter) || 'meter' : 'bulan ini'), rp(total), 'Jumlah transaksi', rows.length + ' transaksi');
-    var h = rows.slice().reverse().map(function (x) { return itemHtml(x, true); }).join('');
+    var h = (rows.length > 1 ? sortBarHtml('riwayat', opsiTx(S.kat)) : '') + sortRows(rows, 'riwayat', opsiTx(S.kat)).map(function (x) { return itemHtml(x, true); }).join('');
     h += '<div class="totalbar"><span>Total ' + esc(r.label) + '</span><span>' + esc(rp(total)) + '</span></div>';
     if (!meter && r.totalAll !== null && r.totalAll !== undefined) {
       h += '<div class="totalbar all2"><span>Total keseluruhan</span><span>' + esc(rp(r.totalAll)) + '</span></div>';
     }
     box.innerHTML = h + kwhRingkas(rows);
   }
+
+  SORT_RENDER.riwayat = function () { if (S.modeR === 'bulan' && S.lastR) renderBulan(S.lastR); };
+  SORT_RENDER.cari = function () { if (S.modeR === 'cari' && S.rc && S.rcToken === S.reqRiwayat) S.rc(); };
+  SORT_RENDER.tahun = SORT_RENDER.tahunMeter = function () { if (S.modeR === 'tahun' && S.rt && S.rtToken === S.reqRiwayat) S.rt(); };
 
   /* --- mode Tahun --- */
   function isiTahun() {
@@ -2015,19 +2176,29 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
       var akhir = (y === S.tahunIni) ? S.bulanIniIdx : 11;
       var rata = tot / Math.max(1, akhir - pertama + 1);
       tampilRingkas('Total tahun ' + y, rp(tot), 'Rata-rata / bulan', rp(rata));
-      var h = bulan.filter(function (b) { return b.n; }).reverse().map(function (b) {
-        return '<button type="button" class="bln-row" data-bulan="' + y + '-' + (b.m0 + 1) + '"><span class="nm">' + esc(BULAN[b.m0]) + '</span>' +
-          '<span class="bar"><i style="width:' + Math.round(b.t / (maks || 1) * 100) + '%"></i></span><b>' + esc(rp(b.t)) + '</b></button>';
-      }).join('');
-      h += '<div class="totalbar"><span>Total ' + y + ' · ' + jml + ' transaksi</span><span>' + esc(rp(tot)) + '</span></div>';
-      var pm = perMeter(semua);
-      if (!meter && S.kat === 'pln' && pm.length > 1) {
-        h += '<h4 class="sub-judul">Per meter</h4>' + pm.map(function (o) {
-          return '<div class="item"><div class="isi"><b>' + esc(labelMeter(o.no)) + '</b><small>' + o.n + ' transaksi' + (o.kwh ? ' · ' + esc(fmtKwh(o.kwh)) + ' kWh' : '') +
-            '</small></div><b>' + esc(rp(o.t)) + '</b></div>';
+      var pm = perMeter(semua), adaBulan = bulan.filter(function (b) { return b.n; });
+      var gambarTahun = function () {   // digambar ulang tanpa memuat data lagi saat urutan diganti
+        var bUrut = sortAgg(adaBulan, 'tahun', OPSI_TAHUN, function (b, f) {
+          return f === 'urut' ? b.m0 : f === 'total' ? b.t : f === 'jml' ? b.n : f === 'rata' ? b.t / b.n : null;
+        });
+        var h = (adaBulan.length > 1 ? sortBarHtml('tahun', OPSI_TAHUN) : '') + bUrut.map(function (b) {
+          return '<button type="button" class="bln-row" data-bulan="' + y + '-' + (b.m0 + 1) + '"><span class="nm">' + esc(BULAN[b.m0]) + '</span>' +
+            '<span class="bar"><i style="width:' + Math.round(b.t / (maks || 1) * 100) + '%"></i></span><b>' + esc(rp(b.t)) + '</b></button>';
         }).join('');
-      }
-      box.innerHTML = h + kwhRingkas(semua) + '<div class="kecil" style="margin-top:8px">Ketuk satu bulan untuk melihat rinciannya.</div>';
+        h += '<div class="totalbar"><span>Total ' + y + ' · ' + jml + ' transaksi</span><span>' + esc(rp(tot)) + '</span></div>';
+        if (!meter && S.kat === 'pln' && pm.length > 1) {
+          var opsiM = opsiMeter('pln'), mUrut = sortAgg(pm, 'tahunMeter', opsiM, function (o, f) {
+            return f === 'total' ? o.t : f === 'jml' ? o.n : f === 'rata' ? o.t / o.n : f === 'kwh' ? (o.kwh || null) : f === 'nama' ? labelMeter(o.no).toLowerCase() : null;
+          });
+          h += '<h4 class="sub-judul">Per meter</h4>' + sortBarHtml('tahunMeter', opsiM) + mUrut.map(function (o) {
+            return '<div class="item"><div class="isi"><b>' + esc(labelMeter(o.no)) + '</b><small>' + o.n + ' transaksi' + (o.kwh ? ' · ' + esc(fmtKwh(o.kwh)) + ' kWh' : '') +
+              '</small></div><b>' + esc(rp(o.t)) + '</b></div>';
+          }).join('');
+        }
+        box.innerHTML = h + kwhRingkas(semua) + '<div class="kecil" style="margin-top:8px">Ketuk satu bulan untuk melihat rinciannya.</div>';
+      };
+      S.rt = gambarTahun; S.rtToken = token;
+      gambarTahun();
     } catch (e) {
       if (token !== S.reqRiwayat) return;
       box.innerHTML = '<div class="pesan err">❌ ' + esc(e.message) + '</div>';
@@ -2067,14 +2238,17 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
           hasil.push(x);
         });
       }
-      hasil.sort(function (p, q) { return (q.tglIso || '').localeCompare(p.tglIso || '') || (q.y * 12 + q.m) - (p.y * 12 + p.m) || q.row - p.row; });
-      if (!hasil.length) { box.innerHTML = '<div class="kosong">Tidak ada transaksi yang cocok dengan filter.</div>'; return; }
-      var total = jumlahRp(hasil);
+      if (!hasil.length) { S.rc = null; box.innerHTML = '<div class="kosong">Tidak ada transaksi yang cocok dengan filter.</div>'; return; }
+      var total = jumlahRp(hasil), katC = S.kat;
       tampilRingkas('Total hasil', rp(total), 'Ditemukan', hasil.length + ' transaksi');
-      var tampil = hasil.slice(0, 300);
-      box.innerHTML = tampil.map(function (x) { return itemHtml(x, true); }).join('') +
-        (hasil.length > tampil.length ? '<div class="kecil" style="margin-top:8px">Menampilkan 300 teratas dari ' + hasil.length + '. Persempit filter untuk melihat sisanya.</div>' : '') +
-        '<div class="totalbar"><span>Total ' + hasil.length + ' transaksi</span><span>' + esc(rp(total)) + '</span></div>' + kwhRingkas(hasil);
+      var gambarCari = function () {   // urutan dipakai SEBELUM dipotong 300 teratas, jadi "terbesar" benar-benar yang terbesar
+        var urutC = sortRows(hasil, 'cari', opsiTx(katC)), tampil = urutC.slice(0, 300);
+        box.innerHTML = (hasil.length > 1 ? sortBarHtml('cari', opsiTx(katC)) : '') + tampil.map(function (x) { return itemHtml(x, true); }).join('') +
+          (hasil.length > tampil.length ? '<div class="kecil" style="margin-top:8px">Menampilkan 300 teratas dari ' + hasil.length + ' menurut urutan yang dipilih. Persempit filter untuk melihat sisanya.</div>' : '') +
+          '<div class="totalbar"><span>Total ' + hasil.length + ' transaksi</span><span>' + esc(rp(total)) + '</span></div>' + kwhRingkas(hasil);
+      };
+      S.rc = gambarCari; S.rcToken = token;
+      gambarCari();
     } catch (e) {
       if (token !== S.reqRiwayat) return;
       box.innerHTML = '<div class="pesan err">❌ ' + esc(e.message) + '</div>';
@@ -2694,8 +2868,13 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     }
     for (var i = 0; i < sel.options.length; i++) if (sel.options[i].value === cur) { sel.value = cur; break; }
   }
+  function ketUrut(key, opsi) {   // teks urutan yang sedang dipakai, ikut tercetak di laporan
+    var st = sortSt(key, opsi), o = opsi[0];
+    opsi.forEach(function (p) { if (p[0] === st.f) o = p; });
+    return o[1] + ' (' + arahLabel(o, st.a) + ')';
+  }
   function tabelTransaksi(rows, adaKwh) {
-    rows = rows.slice().sort(function (a, b) { return (a.tglIso || '').localeCompare(b.tglIso || '') || a.row - b.row; });
+    rows = sortRows(rows, 'laporan', opsiTx(S.kat));   // urutan mengikuti pilihan "Urutkan transaksi" di atas laporan
     var h = '<table><thead><tr><th>No</th><th>Tanggal</th><th>' + (S.kat === 'pln' ? 'Meter / No. PLN' : esc(katInfo(S.kat).idLabel)) + '</th>' + (adaKwh ? '<th class="r">kWh</th>' : '') + '<th class="r">Nominal</th></tr></thead><tbody>';
     rows.forEach(function (x, i) {
       h += '<tr><td>' + (i + 1) + '</td><td>' + esc(x.tgl) + '</td><td>' + esc(S.kat === 'pln' ? labelMeterLengkap(x.noPln) : (x.noPln || '–')) + '</td>' +
@@ -2727,10 +2906,14 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     if (rk.length) h += '<span>Harga rata-rata: <b>' + esc(rp(jumlahRp(rk) / jumlahKwh(rk))) + '/kWh</b></span>';
     h += '</div>';
     if (jenis === 'bulan') {
-      h += tabelTransaksi(semua, adaKwh);
+      h += '<div class="doc-sub" style="margin:0 0 6px">Urutan transaksi: <b>' + esc(ketUrut('laporan', opsiTx(S.kat))) + '</b></div>' + tabelTransaksi(semua, adaKwh);
     } else {
-      h += '<h3>Rekap per bulan</h3><table><thead><tr><th>Bulan</th><th class="r">Transaksi</th>' + (adaKwh ? '<th class="r">kWh</th>' : '') + '<th class="r">Total</th></tr></thead><tbody>';
-      bulanRows.forEach(function (b) {
+      var bUrut = sortAgg(bulanRows, 'lapRekap', OPSI_REKAP, function (b, f) {
+        return f === 'urut' ? b.m0 : f === 'total' ? jumlahRp(b.rows) : f === 'jml' ? b.rows.length : null;
+      });
+      h += '<h3>Rekap per bulan</h3><div class="doc-sub" style="margin:0 0 6px">Urutan rekap: <b>' + esc(ketUrut('lapRekap', OPSI_REKAP)) + '</b></div>' +
+        '<table><thead><tr><th>Bulan</th><th class="r">Transaksi</th>' + (adaKwh ? '<th class="r">kWh</th>' : '') + '<th class="r">Total</th></tr></thead><tbody>';
+      bUrut.forEach(function (b) {
         h += '<tr><td>' + esc(BULAN[b.m0]) + '</td><td class="r">' + b.rows.length + '</td>' + (adaKwh ? '<td class="r">' + (jumlahKwh(b.rows) ? esc(fmtKwh(jumlahKwh(b.rows))) : '–') + '</td>' : '') +
           '<td class="r">' + esc(rp(jumlahRp(b.rows))) + '</td></tr>';
       });
@@ -2739,10 +2922,12 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     var pm = perMeter(semua);
     if (!meter && S.kat === 'pln' && pm.length > 1) {
       h += '<h3>Ringkasan per meter</h3><table><thead><tr><th>Meter</th><th class="r">Transaksi</th><th class="r">Total</th></tr></thead><tbody>' +
-        pm.map(function (o) { return '<tr><td>' + esc(labelMeterLengkap(o.no)) + '</td><td class="r">' + o.n + '</td><td class="r">' + esc(rp(o.t)) + '</td></tr>'; }).join('') + '</tbody></table>';
+        sortAgg(pm, 'lapRekap', OPSI_REKAP, function (o, f) {
+          return f === 'total' ? o.t : f === 'jml' ? o.n : f === 'nama' ? labelMeterLengkap(o.no).toLowerCase() : pm.indexOf(o);
+        }).map(function (o) { return '<tr><td>' + esc(labelMeterLengkap(o.no)) + '</td><td class="r">' + o.n + '</td><td class="r">' + esc(rp(o.t)) + '</td></tr>'; }).join('') + '</tbody></table>';
     }
     if (jenis === 'tahun') {
-      h += '<h3>Rincian transaksi</h3>';
+      h += '<h3>Rincian transaksi</h3><div class="doc-sub" style="margin:0 0 6px">Urutan transaksi di tiap bulan: <b>' + esc(ketUrut('laporan', opsiTx(S.kat))) + '</b></div>';
       bulanRows.forEach(function (b) { if (b.rows.length) h += '<h3 style="font-size:13px;margin-top:12px">' + esc(BULAN[b.m0]) + ' ' + y + '</h3>' + tabelTransaksi(b.rows, adaKwh); });
     }
     return h + '<div class="doc-foot">Dicetak ' + esc(tglPanjang(S.hariIni)) + ' · ' + esc(APP_NAMA) + '</div>';
@@ -2754,7 +2939,20 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     var gab = $('lpJenis').value === 'gabungan', kb = document.querySelector('#v-laporan .katbar');
     if (kb) kb.classList.toggle('hide', gab);                                   // gabungan tidak memilih satu kategori
     $('wrapLpMeter').classList.toggle('hide', gab || S.kat !== 'pln' || !SET.meter.length);
+    isiLpSort();
   }
+  function isiLpSort() {
+    var jenis = $('lpJenis').value, gab = jenis === 'gabungan', kat = gab ? 'gab' : S.kat;
+    var h = '<div class="sort-judul">' + (gab ? 'Urutkan data CSV' : 'Urutkan transaksi (tabel &amp; CSV)') + '</div>' + sortBarHtml('laporan', opsiTx(kat));
+    if (jenis !== 'bulan' || (S.kat === 'pln' && SET.meter.length > 1)) {
+      h += '<div class="sort-judul">Urutkan rekap (' + (gab ? 'kategori &amp; bulan' : jenis === 'bulan' ? 'per meter' : 'per bulan &amp; meter') + ')</div>' + sortBarHtml('lapRekap', OPSI_REKAP);
+    }
+    $('lpSort').innerHTML = h;
+  }
+  SORT_RENDER.laporan = SORT_RENDER.lapRekap = function () {
+    if (S.view !== 'laporan' || !S.rl || S.rlToken !== S.reqLap) return;
+    isiLpSort(); S.rl();
+  };
   function bangunGabungan(y, data) {
     var m, tot = 0, jml = 0, bt = [], h, kotak = function (c) { return '<i style="display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;background:' + c + '"></i>'; };
     for (m = 0; m < 12; m++) { var t = 0; data.forEach(function (d) { t += d.per[m].t; }); bt.push(t); tot += t; }
@@ -2782,19 +2980,33 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
       if (bt[m]) svg += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (y0 - 3) + '" font-size="8" font-weight="700" fill="#333" text-anchor="middle">' + rpSingkat(bt[m]) + '</text>';
       svg += '<text x="' + (x + bw / 2).toFixed(1) + '" y="153" font-size="8.5" fill="#555" text-anchor="middle">' + BULAN[m].slice(0, 3) + '</text>';
     }
-    h += svg + '</svg><div class="ring" style="margin-top:6px">' + data.map(function (d) { return '<span>' + kotakd.warna + esc(d.label) + '</span>'; }).join('') + '</div>';
+    h += svg + '</svg><div class="ring" style="margin-top:6px">' + data.map(function (d) { return '<span>' + kotak(d.warna) + esc(d.label) + '</span>'; }).join('') + '</div>';
 
-    h += '<h3>Rekap per kategori</h3><table><thead><tr><th>Kategori</th><th class="r">Transaksi</th><th class="r">Total</th><th class="r">Porsi</th><th class="r">Rata-rata / bulan</th></tr></thead><tbody>';
-    data.forEach(function (d) {
+    var ketR = '<div class="doc-sub" style="margin:0 0 6px">Urutan rekap: <b>' + esc(ketUrut('lapRekap', OPSI_REKAP)) + '</b></div>';
+    var dUrut = sortAgg(data.map(function (d, i) {
       var n = 0, s = 0; d.per.forEach(function (p) { n += p.n; s += p.t; });
-      h += '<tr><td>' + kotakd.warna + esc(d.label) + '</td><td class="r">' + n + '</td><td class="r">' + esc(rp(s)) + '</td><td class="r">' + Math.round(s / tot * 100) + '%</td><td class="r">' + esc(rp(s / nBln)) + '</td></tr>';
+      return { d: d, n: n, s: s, i: i };
+    }), 'lapRekap', OPSI_REKAP, function (z, f) {
+      return f === 'total' ? z.s : f === 'jml' ? z.n : f === 'nama' ? String(z.d.label).toLowerCase() : z.i;
+    });
+    h += '<h3>Rekap per kategori</h3>' + ketR + '<table><thead><tr><th>Kategori</th><th class="r">Transaksi</th><th class="r">Total</th><th class="r">Porsi</th><th class="r">Rata-rata / bulan</th></tr></thead><tbody>';
+    dUrut.forEach(function (z) {
+      var d = z.d, n = z.n, s = z.s;
+      h += '<tr><td>' + kotak(d.warna) + esc(d.label) + '</td><td class="r">' + n + '</td><td class="r">' + esc(rp(s)) + '</td><td class="r">' + Math.round(s / tot * 100) + '%</td><td class="r">' + esc(rp(s / nBln)) + '</td></tr>';
     });
     h += '</tbody><tfoot><tr><td>Total</td><td class="r">' + jml + '</td><td class="r">' + esc(rp(tot)) + '</td><td class="r">100%</td><td class="r">' + esc(rp(tot / nBln)) + '</td></tr></tfoot></table>';
 
-    h += '<h3>Rekap per bulan</h3><table class="rapat"><thead><tr><th>Bulan</th>' + data.map(function (d) { return '<th class="r">' + esc(d.label) + '</th>'; }).join('') + '<th class="r">Total</th></tr></thead><tbody>';
-    for (m = 0; m <= akhir; m++) {
-      h += '<tr><td>' + esc(BULAN[m]) + '</td>' + data.map(function (d) { return '<td class="r">' + (d.per[m].t ? esc(rp(d.per[m].t)) : '–') + '</td>'; }).join('') + '<td class="r"><b>' + (bt[m] ? esc(rp(bt[m])) : '–') + '</b></td></tr>';
-    }
+    var idxB = [];
+    for (m = 0; m <= akhir; m++) idxB.push(m);
+    idxB = sortAgg(idxB, 'lapRekap', OPSI_REKAP, function (mm, f) {
+      if (f === 'total') return bt[mm];
+      if (f === 'jml') { var c = 0; data.forEach(function (d) { c += d.per[mm].n; }); return c; }
+      return f === 'urut' ? mm : null;
+    });
+    h += '<h3>Rekap per bulan</h3>' + ketR + '<table class="rapat"><thead><tr><th>Bulan</th>' + data.map(function (d) { return '<th class="r">' + esc(d.label) + '</th>'; }).join('') + '<th class="r">Total</th></tr></thead><tbody>';
+    idxB.forEach(function (mm) {
+      h += '<tr><td>' + esc(BULAN[mm]) + '</td>' + data.map(function (d) { return '<td class="r">' + (d.per[mm].t ? esc(rp(d.per[mm].t)) : '–') + '</td>'; }).join('') + '<td class="r"><b>' + (bt[mm] ? esc(rp(bt[mm])) : '–') + '</b></td></tr>';
+    });
     h += '</tbody><tfoot><tr><td>Total</td>' + data.map(function (d) { var s = 0; d.per.forEach(function (p) { s += p.t; }); return '<td class="r">' + esc(rp(s)) + '</td>'; }).join('') + '<td class="r">' + esc(rp(tot)) + '</td></tr></tfoot></table>';
     return h + '<div class="doc-foot">Dicetak ' + esc(tglPanjang(S.hariIni)) + ' · ' + esc(APP_NAMA) + '</div>';
   }
@@ -2814,10 +3026,14 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
         });
         return { kat: K.kat, label: K.label, per: per, rows: rows, warna: WARNA_KAT[K.kat] || WARNA_EXTRA[i % WARNA_EXTRA.length] };
       });
-      doc.innerHTML = bangunGabungan(y, data);
       S.judulLaporan = 'Laporan Tahunan Semua Tagihan ' + y;
       S.csvGab = true;
-      S.csvRows = [].concat.apply([], data.map(function (d) { return d.rows; })).sort(function (p, q) { return (p.tglIso || '').localeCompare(q.tglIso || '') || p.row - q.row; });
+      S.rl = function () {   // digambar ulang tanpa memuat data lagi saat urutan diganti; CSV mengikuti urutan transaksi yang sama
+        doc.innerHTML = bangunGabungan(y, data);
+        S.csvRows = sortRows([].concat.apply([], data.map(function (d) { return d.rows; })), 'laporan', opsiTx('gab'));
+      };
+      S.rlToken = token;
+      S.rl();
     } catch (e) { if (token === S.reqLap) doc.innerHTML = '<div class="pesan err">❌ ' + esc(e.message) + '</div>'; }
   }
   async function muatLaporan() {
@@ -2834,9 +3050,14 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
       await ambilData(a, b);
       if (token !== S.reqLap) return;
       for (k = a; k <= b; k++) bulanRows.push({ m0: k % 12, rows: rowsBulan(k, meter) || [] });
-      doc.innerHTML = bangunLaporan(jenis, y, m0, bulanRows, meter);
       S.csvGab = false;
-      S.csvRows = [].concat.apply([], bulanRows.map(function (b) { return b.rows; })).sort(function (p, q) { return (p.tglIso || '').localeCompare(q.tglIso || '') || p.row - q.row; });
+      var katL = S.kat;
+      S.rl = function () {   // digambar ulang tanpa memuat data lagi saat urutan diganti; CSV mengikuti urutan transaksi yang sama
+        doc.innerHTML = bangunLaporan(jenis, y, m0, bulanRows, meter);
+        S.csvRows = sortRows([].concat.apply([], bulanRows.map(function (b) { return b.rows; })), 'laporan', opsiTx(katL));
+      };
+      S.rlToken = token;
+      S.rl();
       S.judulLaporan = 'Laporan ' + katInfo(S.kat).label + ' ' + (jenis === 'bulan' ? BULAN[m0] + ' ' + y : y) + (meter ? ' - ' + (namaMeter(meter) || meter) : '');
     } catch (e) { if (token === S.reqLap) doc.innerHTML = '<div class="pesan err">❌ ' + esc(e.message) + '</div>'; }
   }
