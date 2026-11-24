@@ -12,7 +12,7 @@ document.documentElement.classList.add("kunci");
 /* Pengaman: bila server tak menjawab / script gagal, dashboard tetap dibuka (kecuali layar login sedang tampil). */
 setTimeout(function(){var l=document.getElementById("login");if(!l||!l.classList.contains("tampil"))document.documentElement.classList.remove("kunci");},20000);
 </script>
-<title>Catat Token PLN</title>
+<title>Catat Tagihan</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Cdefs%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%230b5ea8%22/%3E%3Cstop offset=%221%22 stop-color=%22%2308467f%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width=%2264%22 height=%2264%22 rx=%2215%22 fill=%22url%28%23g%29%22/%3E%3Cpath d=%22M36 8 16 36h14l-3 20 21-30H34z%22 fill=%22%23f6c200%22 stroke=%22%23f6c200%22 stroke-width=%222%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAADjUlEQVR4nO3dQXLbMBBE0XG2XuduWXnlY+UAuVsukYVctmO5IRAEycH0fyfQ4ldTQImlp+eXPwF858fVHwB5EQck4oBEHJCIAxJxQCIOSMQBiTggEQck4oBEHJCIAxJxQCIOSMQBiTggEQck4oBEHJCIAxJxbPP39dfVH+E8xLGBVRlBHGggjl5usxHE0cmwjCCOHp/L+Pnb6O1R4oBEHA94PlBuiKPFuYwgDjQQh2Q+G0EcCmUEcXyLMm6IYwOrS44gjnvMxjvi+A9lfEYckIjjA7PxBXG8oYx7xAGJOCKYDYE4KENyj6O/DLcbsCAONFjHwQOlzTcOynjINw48ZBoHs9HDMQ7K6GQXB2X0s4tjjOElR7jFwWxsYhQHZWxlFAe2comD2RhgEQdljKkfB2UMqx8HhhWPg9nYo3Ics8rwvAGL2nFgp7Jx8EDZr2YclDFFzTgwRcE4mI1ZqsVBGROVioMy5ioVxxFsLzmiUhzMxnRF4qCMIxSJA0d4en5Z/placjYyfNdZfjko4zhrx1GyjDzWjqOkJLMRS8dRcjbylBHrxkEZJ1g1DpxgyTiYjXOsFwdlnGaxOEqWkdZicZSUczZirThKzkbaMmKhOCjjfMvEgfOtEQezcYkF4qCMqywQB66SPQ5m40Kp46CMa+WNgzIulzcOXC5pHMxGBhnjoIwkMsaBJNLFwWzkkSsOykglURyUkU2iOJBNljiYjYQqvEg97NAiVy8j8iwHEiKOQxSYjXCO47hnSo0ywjmOg5QpI4gDDcQxU6XZCOKYqFgZQRxoMI1j+lGl3myEbRxzlSwjiGO/qmUEcaCBOHYpPBtBHHvULiM84yj525EjOMYxRfnZCOIY41BGEMcAkzKCONBAHNv4zEYYxrHnqGJVRhjGgX7E0cttNoI4OhmWEcTRw7OMIA40EMcDtrMRbnFsPcc6lxFucWAT4pDMZyOIQ6GMII5vUcYNcUAyiqPzqMJsvDOKowdlfEYckIjjA7PxBXG8oYx7xBFBGYJLHLzINMAljgZmQ3GPgzIa3ONAg3UczEabbxyU8ZBFHPdHFcroYREHxjjGwWx0souDMvrZxYF+XnEwG5vUj+P9qEIZW9WP44YyBrjEgQEWcTAbY6z/VxZtFsuBMcQBiTggEQck4oBEHJCIAxJxQCIOSMQBiTggEQck4oBEHJCIAxJxQCIOSMQBiTggEQck4oD0DynbzqkAePGTAAAAAElFTkSuQmCC">
 <style>
@@ -906,7 +906,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
       <circle class="pg" id="lgPg" cx="80" cy="80" r="70" pathLength="100"/>
       <g transform="translate(52.4 52.4) scale(2.3)"><path class="bolt" d="M13 2 3 14h9l-1 8 10-12h-9z"/></g>
     </svg>
-    <h1 id="lgJudul">Catat Token PLN</h1>
+    <h1 id="lgJudul">Catat Tagihan</h1>
     <p class="sub">Masukkan PIN untuk membuka</p>
     <div class="lg-panel"><div class="lg-in" id="lgIn">
       <div class="lg-dots" id="lgDots" role="img" aria-label="Belum ada angka"></div>
@@ -943,7 +943,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
   // ╔══════════════════════════════════════════════════════════════╗
   // ║  TEMPEL DISINI  →  URL Web App Code.gs (berakhiran /exec)    ║
   // ╚══════════════════════════════════════════════════════════════╝
-  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbySFMhxGLSLps68yVptNwO63bGHgaB5AgFw_8YjV_pkZcCPnGrPv50XEgvtCj4cLJHfFw/exec';
+  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbys2qXffp1IayKkeXwDpXzl4sdEnO1vf8kl2rlj8FIFlO4adiLEnxuETUiVzkGJ2LGnqA/exec';
 
   var BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   var HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
@@ -962,7 +962,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
   var PIN = '';
   try { PIN = sessionStorage.getItem('pln_pin') || ''; } catch (e) {}
   var PRESET_DEF = PRESET.slice();
-  var APP_NAMA = 'Catat Token PLN';
+  var APP_NAMA = 'Catat Tagihan';
   var SET = { preset: PRESET.slice(), noPlnBawaan: '', anggaran: 0, meter: [], pengingat: { aktif: false, hari: 3, email: '' } };
   var S = {
     file: null, sending: false, nomor: 0, hariIni: '', daftar: [], bulanIni: '', riwayatKey: '',
