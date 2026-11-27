@@ -562,6 +562,182 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
 .app{padding-bottom:calc(124px + env(safe-area-inset-bottom))}
 @media (prefers-reduced-motion:reduce){.nav,.nav-bub{transition:none!important}}
 @media print{.nav-bar,.nav-bub{display:none!important}}
+
+/* =====================================================================
+   v9: TAMPILAN LAPTOP / DESKTOP (layar >= 1100px)
+   - sidebar kaca di kiri menggantikan navigasi bawah, konten memenuhi layar
+   - Beranda: grid 12 kolom (ringkasan, aksi, tren, status, terbaru)
+   - Transaksi: form 2 kolom · Riwayat & Laporan: panel kontrol + hasil berdampingan
+   - gerak hanya memakai transform & opacity (dikerjakan GPU) -> tetap mulus
+   HP / tablet kecil tidak berubah sama sekali.
+   ===================================================================== */
+.nav-brand,.nav-hint,.nav-kbd,.nav-keluar{display:none}
+@media screen and (min-width:1100px){
+  :root{--sb:248px;--sb-gap:18px;--bayang:0 10px 30px rgba(0,10,30,.28)}
+
+  /* ----- kerangka: sidebar tetap + konten lebar ----- */
+  .app{max-width:none;margin:0;padding:28px clamp(24px,3vw,56px) 56px calc(var(--sb) + var(--sb-gap) * 2 + clamp(8px,1.5vw,28px))}
+  .app>section{max-width:1520px;margin-inline:auto;animation:none}
+  .hero,.subhead{margin:0 0 20px;border-radius:26px}
+  .subhead{padding:20px 26px}
+  .subhead .kembali{display:none}                 /* sidebar sudah cukup untuk berpindah halaman */
+  .subhead h2{font-size:22px}
+  .subhead small{font-size:13.5px}
+
+  /* ----- latar: orb lebih besar + kisi halus (statis, tanpa beban animasi) ----- */
+  .bg-app .lg-orb.a{width:900px;height:900px;left:-300px;top:-320px}
+  .bg-app .lg-orb.b{width:760px;height:760px;right:-260px;bottom:-300px}
+  .bg-app::after{content:"";position:absolute;inset:0;
+    background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+    background-size:56px 56px;
+    -webkit-mask:radial-gradient(ellipse 80% 70% at 62% 28%,#000 15%,transparent 75%);
+            mask:radial-gradient(ellipse 80% 70% at 62% 28%,#000 15%,transparent 75%)}
+
+  /* ----- sidebar ----- */
+  .nav{left:var(--sb-gap);top:var(--sb-gap);bottom:var(--sb-gap);transform:none;width:var(--sb);height:auto;
+    flex-direction:column;align-items:stretch;gap:4px;padding:16px 12px 14px;border-radius:26px;filter:none;transition:none}
+  html:not(.kunci) .nav{animation:navSamping .6s .05s cubic-bezier(.2,.8,.2,1) backwards}
+  .nav-bar{border-radius:26px;-webkit-mask:none;mask:none;border:1px solid rgba(255,255,255,.12);
+    background:linear-gradient(170deg,rgba(255,255,255,.11),rgba(255,255,255,.03)),rgba(6,22,42,.78);
+    box-shadow:0 24px 60px rgba(0,8,24,.45)}
+  .nav-bub{left:12px;right:12px;top:0;width:auto;height:var(--bh,46px);border-radius:15px;will-change:transform;
+    transform:translate3d(0,var(--by,0px),0);
+    background:linear-gradient(135deg,#2f86d6,#17539a);
+    box-shadow:0 8px 22px rgba(30,120,230,.45),inset 0 1px 0 rgba(255,255,255,.3);
+    transition:transform .5s cubic-bezier(.3,1.25,.4,1),height .3s,opacity .25s}
+  .nav-brand{display:flex;align-items:center;gap:12px;position:relative;z-index:2;color:#fff;
+    padding:4px 8px 16px;margin-bottom:10px;border-bottom:1px solid rgba(255,255,255,.1)}
+  .nav-brand .bolt{width:40px;height:40px;border-radius:12px;background:var(--kuning);color:#222;display:inline-flex;align-items:center;justify-content:center;font-size:20px;flex:none}
+  .nav-brand b{display:block;font-size:16px;line-height:1.2}
+  .nav-brand small{display:block;font-size:12px;opacity:.7;margin-top:1px}
+  .nav button{flex:none;width:100%;height:46px;flex-direction:row;justify-content:flex-start;align-items:center;gap:14px;padding:0 14px 0 16px;
+    border-radius:15px;font-size:14.5px;font-weight:600;text-align:left;color:rgba(226,236,248,.78)}
+  .nav button .ic{width:22px;height:22px;transition:transform .35s cubic-bezier(.3,1.5,.5,1),color .2s}
+  .nav button.aktif{color:#fff;font-weight:700}
+  .nav button.aktif .ic{transform:scale(1.08);color:#fff}
+  .nav button:active{transform:scale(.97)}
+  .nav-kbd{display:inline-block;margin-left:auto;min-width:22px;padding:2px 6px;border-radius:7px;text-align:center;font:600 11px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    color:rgba(226,236,248,.6);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1)}
+  .nav button.aktif .nav-kbd{color:#fff;background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.22)}
+  .nav-hint{display:block;margin-top:auto;position:relative;z-index:2;padding:12px 10px 0;border-top:1px solid rgba(255,255,255,.1);
+    font-size:12px;line-height:1.5;color:rgba(226,236,248,.55)}
+  .nav-hint kbd{font:600 11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:1px 5px;border-radius:6px;background:rgba(255,255,255,.1);color:rgba(226,236,248,.8)}
+  @media (hover:hover){
+    .nav button:not(.aktif):hover{background:rgba(255,255,255,.08);color:#fff}
+    .nav button:not(.aktif):hover .ic{transform:translate3d(2px,0,0) scale(1.06)}
+  }
+
+  /* tombol Keluar di sidebar: tersedia di semua menu (tombol lama di hero disembunyikan di laptop) */
+  #btnKeluar{display:none!important}
+  .nav button.nav-keluar{display:flex;margin-bottom:12px;color:rgba(255,190,190,.9)}
+  .nav-keluar:not(.hide){margin-top:auto}
+  .nav-keluar:not(.hide)+.nav-hint{margin-top:0}
+  @media (hover:hover){.nav button.nav-keluar:hover{background:rgba(239,107,107,.18);color:#ffc4c4}}
+
+  /* ----- kartu: sedikit lebih lega, tepi halus ----- */
+  .kartu{padding:20px 22px;border-radius:20px;border:1px solid rgba(120,160,200,.18)}
+  .stat .kartu{padding:18px 38px 18px 20px}
+  .stat .kartu.klik{border:0}
+  .kartu h3{font-size:16px}
+
+  /* ----- BERANDA: grid 12 kolom ----- */
+  #v-beranda{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:20px;align-items:stretch}
+  #v-beranda>*{grid-column:1/-1;margin:0}
+  #v-beranda>.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,460px);gap:28px;align-items:center;padding:28px 32px}
+  #v-beranda .judul .bolt{width:48px;height:48px;border-radius:14px;font-size:24px}
+  #v-beranda .judul h1{font-size:30px;letter-spacing:-.4px}
+  #v-beranda .judul small{font-size:14px;margin-top:3px}
+  #v-beranda .total-all{margin:0;padding:16px 22px;border-radius:18px}
+  #v-beranda .total-all small{font-size:13px}
+  #v-beranda .total-all b{font-size:36px;letter-spacing:-.6px}
+  #v-beranda>.stat{grid-column:span 5;order:3}
+  #v-beranda>.aksi{grid-column:span 7;order:3}
+  #v-beranda>.aksi button{min-height:0;padding:18px 20px}
+  #v-beranda>.tren{grid-column:span 7;order:5}
+  #v-beranda>#kartuRingkas{grid-column:span 5;order:5}
+  #v-beranda>#kartuAnggaran{grid-column:span 5;order:6}
+  #v-beranda>#kartuKwh{grid-column:1/-1;order:6}
+  #v-beranda>.kartu:last-child{order:9}
+  #v-beranda:not(:has(#kartuRingkas:not(.hide))):not(:has(#kartuAnggaran:not(.hide)))>.tren{grid-column:1/-1}
+  .tren svg{max-height:300px}
+  /* daftar terbaru: bilah urut & pesan selebar baris; tiap transaksi jadi kartu kecil berdampingan (garis pemisah tidak lagi tidak konsisten) */
+  #terbaruIsi{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:10px 16px}
+  #terbaruIsi>*{grid-column:1/-1}
+  #terbaruIsi>.sortbar{margin:0 0 4px;max-width:560px}
+  #terbaruIsi>.item{grid-column:auto;padding:12px 16px;border:1px solid var(--garis);border-radius:16px;background:var(--chip)}
+  #terbaruIsi>.item:last-child{border-bottom:1px solid var(--garis)}
+  .item{content-visibility:auto;contain-intrinsic-size:auto 64px}
+
+  /* ----- TRANSAKSI: form 2 kolom ----- */
+  #v-transaksi{max-width:1120px}
+  #form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:32px;padding:28px 30px 24px}
+  #form>#wrapPilihMeter,#form>#wrapKet,#form>#wrapNota,#form>.namafile,#form>#kirim{grid-column:1/-1}
+  #form>.btn{margin-top:4px}
+  .ambil .opsi{min-height:128px}
+
+  /* ----- RIWAYAT: kontrol di kiri, daftar di kanan ----- */
+  #v-riwayat{display:grid;grid-template-columns:minmax(320px,400px) minmax(0,1fr);column-gap:24px;row-gap:0;align-items:start}
+  #v-riwayat>*{grid-column:1}
+  #v-riwayat>.subhead,#v-riwayat>.katbar{grid-column:1/-1}
+  #v-riwayat>.rw-daftar{grid-column:2;grid-row:3/span 40;min-height:360px}
+
+  /* ----- LAPORAN: panel kontrol (menempel) + pratinjau ----- */
+  #v-laporan{display:grid;grid-template-columns:minmax(320px,380px) minmax(0,1fr);column-gap:24px;row-gap:0;align-items:start}
+  #v-laporan>*{grid-column:1}
+  #v-laporan>.subhead,#v-laporan>.katbar{grid-column:1/-1}
+  #v-laporan>.kartu{position:sticky;top:20px}
+  #v-laporan>.doc{grid-column:2;grid-row:3/span 40}
+
+  /* ----- PENGATURAN: dua kolom seimbang ----- */
+  #v-pengaturan{column-count:2;column-gap:24px}
+  #v-pengaturan>.subhead{column-span:all}
+  #v-pengaturan>.kartu{break-inside:avoid}
+
+  /* ----- dialog & notifikasi ----- */
+  #detBox .kartu{max-width:680px}
+  .overlay.dlg .kartu{max-width:460px}
+  .toast{left:calc(50% + (var(--sb) + var(--sb-gap) * 2) / 2);bottom:28px}
+
+  /* ----- gerak (hanya transform/opacity) ----- */
+  @keyframes navSamping{from{opacity:0;transform:translate3d(-26px,0,0)}}
+  @keyframes masukNaik{from{opacity:0;transform:translate3d(0,22px,0) scale(.985)}}
+  @keyframes batangNaik{from{transform:scaleY(0)}}
+  @keyframes lebarNaik{from{transform:scaleX(0)}}
+  @keyframes kilau{0%,72%{transform:translate3d(-130%,0,0)}100%{transform:translate3d(130%,0,0)}}
+
+  /* tiap blok masuk bergantian dari bawah (berulang tiap halaman dibuka / blok muncul) */
+  .app>section>*{animation:masukNaik .6s cubic-bezier(.2,.8,.2,1) backwards}
+  .app>section>*:nth-child(2){animation-delay:.05s}
+  .app>section>*:nth-child(3){animation-delay:.1s}
+  .app>section>*:nth-child(4){animation-delay:.15s}
+  .app>section>*:nth-child(5){animation-delay:.2s}
+  .app>section>*:nth-child(6){animation-delay:.25s}
+  .app>section>*:nth-child(7){animation-delay:.3s}
+  .app>section>*:nth-child(n+8){animation-delay:.35s}
+
+  /* batang grafik tumbuh dari dasar, bar progres melebar dari kiri */
+  .tren .bar{transform-box:fill-box;transform-origin:50% 100%;animation:batangNaik .75s cubic-bezier(.2,.8,.2,1) backwards}
+  .tren .batang:nth-of-type(3n+2) .bar{animation-delay:.06s}
+  .tren .batang:nth-of-type(3n) .bar{animation-delay:.12s}
+  .bln-row .bar i,.progres i{transform-origin:0 50%;animation:lebarNaik .85s .15s cubic-bezier(.2,.8,.2,1) backwards}
+
+  /* total keseluruhan: kilau lembut melintas berkala */
+  #v-beranda .total-all{position:relative;overflow:hidden}
+  #v-beranda .total-all::after{content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.45) 50%,transparent 62%);
+    transform:translate3d(-130%,0,0);animation:kilau 7s 1.4s ease-in-out infinite}
+
+  /* kartu beranda terangkat saat disorot mouse */
+  #v-beranda>.kartu,#v-beranda>.stat .kartu{transition:transform .35s cubic-bezier(.2,.8,.2,1),border-color .3s,box-shadow .35s}
+  @media (hover:hover){
+    #v-beranda>.kartu:hover{transform:translate3d(0,-3px,0);border-color:rgba(47,134,214,.55);box-shadow:0 18px 40px rgba(0,10,30,.38)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .app>section>*,.tren .bar,.bln-row .bar i,.progres i,#v-beranda .total-all::after,html:not(.kunci) .nav{animation:none!important}
+    .nav-bub,#v-beranda>.kartu,#v-beranda>.stat .kartu,.nav button .ic{transition:none!important}
+  }
+}
 </style>
 </head>
 <body>
@@ -773,7 +949,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
       <div class="kartu"><small id="rLab1">Total bulan ini</small><b id="rTotal">–</b></div>
       <div class="kartu"><small id="rLab2">Jumlah transaksi</small><b id="rJumlah">–</b></div>
     </div>
-    <div class="kartu"><div id="riwayatIsi"><div class="kosong">Memuat…</div></div></div>
+    <div class="kartu rw-daftar"><div id="riwayatIsi"><div class="kosong">Memuat…</div></div></div>
   </section>
 
   <!-- ================= LAPORAN ================= -->
@@ -845,11 +1021,14 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
 <!-- Navigasi bawah -->
 <nav class="nav" id="nav" aria-label="Menu utama">
   <i class="nav-bar" aria-hidden="true"></i><i class="nav-bub" aria-hidden="true"></i>
+  <div class="nav-brand" aria-hidden="true"><span class="bolt">⚡</span><div><b>Catat Tagihan</b><small>Dashboard pengeluaran</small></div></div>
   <button type="button" id="nav-beranda" class="aktif" data-go="beranda"><svg class="ic" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>Beranda</button>
   <button type="button" id="nav-transaksi" data-go="transaksi"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Transaksi</button>
   <button type="button" id="nav-riwayat" data-go="riwayat"><svg class="ic" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Riwayat</button>
   <button type="button" id="nav-laporan" data-go="laporan"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>Laporan</button>
   <button type="button" id="nav-pengaturan" data-go="pengaturan"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Atur</button>
+  <button type="button" class="nav-keluar hide" id="navKeluar" title="Keluar (kunci aplikasi)" aria-label="Keluar (kunci aplikasi)"><svg class="ic" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>Keluar</button>
+  <div class="nav-hint" aria-hidden="true">Pintasan keyboard: tekan <kbd>1</kbd>–<kbd>5</kbd> untuk pindah menu.</div>
 </nav>
 
 <!-- Kamera -->
@@ -983,7 +1162,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
   // ╔══════════════════════════════════════════════════════════════╗
   // ║  TEMPEL DISINI  →  URL Web App Code.gs (berakhiran /exec)    ║
   // ╚══════════════════════════════════════════════════════════════╝
-  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbwZJ-7xuDSXOetpUAEYKUknCZM8NGfInLrMhA7jzE0M9APl225WFG3YWNllBQ-gU1F_ow/exec';
+  var URL_CODE_GS = 'https://script.google.com/macros/s/AKfycbys2qXffp1IayKkeXwDpXzl4sdEnO1vf8kl2rlj8FIFlO4adiLEnxuETUiVzkGJ2LGnqA/exec';
 
   var BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   var HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
@@ -1089,17 +1268,84 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
     var nav = $('nav'), b = $('nav-' + S.view);
     if (!nav || !b || !b.offsetWidth) return;
     var x = b.offsetLeft + b.offsetWidth / 2;
+    var bub = nav.querySelector('.nav-bub');
     if (!nav.classList.contains('siap')) {            // pertama kali: langsung di tempat, tanpa animasi
       nav.style.transition = 'none';
+      if (bub) bub.style.transition = 'none';
       nav.style.setProperty('--bx', x + 'px');
+      nav.style.setProperty('--by', b.offsetTop + 'px');      // sidebar laptop: pil aktif bergeser vertikal
+      nav.style.setProperty('--bh', b.offsetHeight + 'px');
       void nav.offsetWidth;
       nav.style.transition = '';
+      if (bub) { void bub.offsetWidth; bub.style.transition = ''; }
       nav.classList.add('siap');
-    } else nav.style.setProperty('--bx', x + 'px');
+    } else {
+      nav.style.setProperty('--bx', x + 'px');
+      nav.style.setProperty('--by', b.offsetTop + 'px');
+      nav.style.setProperty('--bh', b.offsetHeight + 'px');
+    }
   }
   window.addEventListener('resize', posisiNav);
   window.addEventListener('orientationchange', posisiNav);
   if (window.ResizeObserver) new ResizeObserver(posisiNav).observe($('nav'));
+
+  /* ---------- laptop/desktop: pintasan keyboard 1–5 & angka ringkasan yang "naik" ---------- */
+  (function efekDesktop() {
+    try {
+      var urut = ['beranda', 'transaksi', 'riwayat', 'laporan', 'pengaturan'];
+      urut.forEach(function (v, i) {                      // keycap kecil di tiap menu sidebar (disembunyikan CSS di HP)
+        var b = $('nav-' + v);
+        if (!b) return;
+        var k = document.createElement('kbd');
+        k.className = 'nav-kbd'; k.setAttribute('aria-hidden', 'true'); k.textContent = String(i + 1);
+        b.appendChild(k);
+      });
+      var nb = document.querySelector('.nav-brand b');
+      if (nb) nb.textContent = APP_NAMA;
+      var lebar = window.matchMedia ? matchMedia('(min-width:1100px)') : null;
+      document.addEventListener('keydown', function (e) {
+        if (!lebar || !lebar.matches || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey || e.repeat) return;
+        var t = e.target, tag = t && t.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
+        if (document.querySelector('.overlay.tampil') || ($('login') && $('login').classList.contains('tampil'))) return;   // PIN memakai angka 0–9
+        var i = e.key.length === 1 ? '12345'.indexOf(e.key) : -1;
+        var b = i >= 0 ? $('nav-' + urut[i]) : null;
+        if (b) { e.preventDefault(); b.click(); }
+      });
+
+      // angka ringkasan menghitung naik dari nilai sebelumnya (rAF, 650 ms); dilewati bila gerak dikurangi / layar kecil
+      var gerak = window.matchMedia && matchMedia('(min-width:1100px) and (prefers-reduced-motion:no-preference)');
+      if (!gerak || !gerak.matches || !window.MutationObserver) return;
+      ['sAll', 'sTotal', 'sJumlah'].forEach(function (id) {
+        var el = $(id);
+        if (!el) return;
+        var dari = 0, raf = 0, ditulis = null;
+        function ambil(t) {
+          var m = /(\d{1,3}(?:\.\d{3})+|\d+)/.exec(t);
+          return m ? { n: Number(m[1].replace(/\./g, '')), i: m.index, len: m[1].length } : null;
+        }
+        function ribu(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+        new MutationObserver(function () {
+          var t = el.textContent;
+          if (t === ditulis) return;                       // perubahan dari animasi ini sendiri
+          cancelAnimationFrame(raf);
+          var p = ambil(t);
+          if (!p) { dari = 0; return; }
+          var awal = dari, akhir = p.n;
+          dari = akhir;
+          if (awal === akhir || Math.abs(akhir - awal) < 2) return;
+          var t0 = null, depan = t.slice(0, p.i), belakang = t.slice(p.i + p.len);
+          (function langkah(ts) {
+            if (t0 === null) t0 = ts;
+            var k = Math.min(1, (ts - t0) / 650), e = 1 - Math.pow(1 - k, 3);
+            ditulis = k < 1 ? depan + ribu(awal + (akhir - awal) * e) + belakang : t;
+            el.textContent = ditulis;
+            if (k < 1) raf = requestAnimationFrame(langkah);
+          })(performance.now());
+        }).observe(el, { childList: true, characterData: true, subtree: true });
+      });
+    } catch (e) { /* efek hanya hiasan: jangan sampai mengganggu aplikasi */ }
+  })();
   function tampilView(nama) {
     if (VIEWS.indexOf(nama) < 0) nama = 'beranda';
     S.view = nama;
@@ -2657,10 +2903,12 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
   })();
   function tampilPin(m) { Login.tampil(m); }
   // Keluar: hapus PIN dari sesi lalu muat ulang, sehingga semua data di layar ikut terhapus.
-  $('btnKeluar').addEventListener('click', function () {
+  function keluarSekarang() {
     try { sessionStorage.removeItem('pln_pin'); } catch (x) {}
     location.reload();
-  });
+  }
+  $('btnKeluar').addEventListener('click', keluarSekarang);
+  $('navKeluar').addEventListener('click', keluarSekarang);     // tombol di sidebar laptop
   /* ---------- logout otomatis: tanpa aktivitas selama IDLE_MENIT menit ---------- */
   var IDLE_MENIT = 10;                       // ubah angka ini bila ingin batas waktu lain
   var IDLE_MS = IDLE_MENIT * 60 * 1000, PERINGATAN_MS = 30000;
@@ -2713,6 +2961,7 @@ html:not(.kunci) .nav{animation:navMasuk .5s .1s cubic-bezier(.2,.8,.2,1) backwa
       var s = await run('statusAwal');
       try { localStorage.setItem('pln_perlu_pin', s.perluPin ? '1' : '0'); } catch (x) {}
       $('btnKeluar').classList.toggle('hide', !s.perluPin);
+      $('navKeluar').classList.toggle('hide', !s.perluPin);
       idleAktif = !!s.perluPin; catatAktif();
       Login.panjang(s.perluPin ? s.pinPanjang : 0);   // bulatan di layar login = jumlah angka PIN
       if (s.perluPin && !PIN) { tampilPin(''); return; }
